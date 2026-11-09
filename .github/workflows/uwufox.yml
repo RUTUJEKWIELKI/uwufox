@@ -61,8 +61,8 @@ jobs:
       RELEASE_TAG: ${{ inputs.release_tag || needs.resolve-auto-version.outputs.release_tag || '' }}
       AUTO_RELEASE_VERSION: ${{ needs.resolve-auto-version.outputs.app_version || '' }}
       MOZCONFIG: waterfox/build/mozconfig-uwufox-linux
-      MOZ_MAKE_FLAGS: -j2
-      CARGO_BUILD_JOBS: 2
+      MOZ_MAKE_FLAGS: -j$(nproc)
+      CARGO_BUILD_JOBS: $(nproc)
       RUST_TOOLCHAIN: 1.99.1
     steps:
       - name: Expand build disk
@@ -88,6 +88,13 @@ jobs:
           fi
           df -h /
 
+      - name: Clean up old build artifacts
+        run: |
+          # Clean up old objdirs to free up space
+          find "$GITHUB_WORKSPACE" -maxdepth 2 -type d -name 'obj-*' -exec rm -rf {} + 2>/dev/null || true
+          # Clean up old dist directories
+          find "$GITHUB_WORKSPACE" -maxdepth 3 -type d -name 'dist' -exec rm -rf {} + 2>/dev/null || true
+
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -111,6 +118,27 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y msitools xvfb zip zstd
+
+      - name: Install sccache
+        uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+        with:
+          version: "0.7.5"
+
+      - name: Setup sccache
+        shell: bash
+        run: |
+          echo "RCCACHE_PROG=$HOME/.cargo/bin/sccache" >> "$GITHUB_ENV"
+          echo "MOZ_RUST_DEFAULT_TOOLCHAIN=$RUST_TOOLCHAIN" >> "$GITHUB_ENV"
+
+      - name: Cache Rust toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.rustup
+            ~/.cargo
+          key: rust-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            rust-${{ runner.os }}-
 
       - name: Install Rust
         run: |
@@ -192,7 +220,7 @@ jobs:
     timeout-minutes: 360
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 4
       matrix:
         include:
           - target_name: linux-aarch64
@@ -225,8 +253,8 @@ jobs:
       RELEASE_TAG: ${{ inputs.release_tag || needs.resolve-auto-version.outputs.release_tag || '' }}
       AUTO_RELEASE_VERSION: ${{ needs.resolve-auto-version.outputs.app_version || '' }}
       MOZCONFIG: ${{ matrix.mozconfig }}
-      MOZ_MAKE_FLAGS: -j2
-      CARGO_BUILD_JOBS: 2
+      MOZ_MAKE_FLAGS: -j$(nproc)
+      CARGO_BUILD_JOBS: $(nproc)
       RUST_TOOLCHAIN: 1.99.1
       TARGET_NAME: ${{ matrix.target_name }}
       RUST_TARGET: ${{ matrix.rust_target }}
@@ -255,6 +283,13 @@ jobs:
             exit 1
           fi
           df -h /
+
+      - name: Clean up old build artifacts
+        run: |
+          # Clean up old objdirs to free up space
+          find "$GITHUB_WORKSPACE" -maxdepth 2 -type d -name 'obj-*' -exec rm -rf {} + 2>/dev/null || true
+          # Clean up old dist directories
+          find "$GITHUB_WORKSPACE" -maxdepth 3 -type d -name 'dist' -exec rm -rf {} + 2>/dev/null || true
 
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
