@@ -61,8 +61,7 @@ jobs:
       RELEASE_TAG: ${{ inputs.release_tag || needs.resolve-auto-version.outputs.release_tag || '' }}
       AUTO_RELEASE_VERSION: ${{ needs.resolve-auto-version.outputs.app_version || '' }}
       MOZCONFIG: waterfox/build/mozconfig-uwufox-linux
-      MOZ_MAKE_FLAGS: -j$(nproc)
-      CARGO_BUILD_JOBS: $(nproc)
+
       RUST_TOOLCHAIN: 1.99.1
     steps:
       - name: Expand build disk
@@ -114,6 +113,13 @@ jobs:
           } >> "$GITHUB_ENV"
           echo "$GITHUB_WORKSPACE/.cargo/bin" >> "$GITHUB_PATH"
 
+      - name: Configure build parallelism
+        shell: bash
+        run: |
+          jobs="$(nproc)"
+          echo "MOZ_MAKE_FLAGS=-j${jobs}" >> "$GITHUB_ENV"
+          echo "CARGO_BUILD_JOBS=${jobs}" >> "$GITHUB_ENV"
+
       - name: Install packaging tools
         run: |
           sudo apt-get update
@@ -122,20 +128,21 @@ jobs:
       - name: Install sccache
         uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
         with:
-          version: "0.7.5"
+          version: "v0.16.0"
 
       - name: Setup sccache
         shell: bash
         run: |
-          echo "RCCACHE_PROG=$HOME/.cargo/bin/sccache" >> "$GITHUB_ENV"
+          echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
+          echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
           echo "MOZ_RUST_DEFAULT_TOOLCHAIN=$RUST_TOOLCHAIN" >> "$GITHUB_ENV"
 
       - name: Cache Rust toolchain
         uses: actions/cache@v4
         with:
           path: |
-            ~/.rustup
-            ~/.cargo
+            .rustup
+            .cargo
           key: rust-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             rust-${{ runner.os }}-
@@ -253,8 +260,7 @@ jobs:
       RELEASE_TAG: ${{ inputs.release_tag || needs.resolve-auto-version.outputs.release_tag || '' }}
       AUTO_RELEASE_VERSION: ${{ needs.resolve-auto-version.outputs.app_version || '' }}
       MOZCONFIG: ${{ matrix.mozconfig }}
-      MOZ_MAKE_FLAGS: -j$(nproc)
-      CARGO_BUILD_JOBS: $(nproc)
+
       RUST_TOOLCHAIN: 1.99.1
       TARGET_NAME: ${{ matrix.target_name }}
       RUST_TARGET: ${{ matrix.rust_target }}
@@ -309,6 +315,13 @@ jobs:
             echo "TMPDIR=$GITHUB_WORKSPACE/.tmp"
           } >> "$GITHUB_ENV"
           echo "$GITHUB_WORKSPACE/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Configure build parallelism
+        shell: bash
+        run: |
+          jobs="$(nproc)"
+          echo "MOZ_MAKE_FLAGS=-j${jobs}" >> "$GITHUB_ENV"
+          echo "CARGO_BUILD_JOBS=${jobs}" >> "$GITHUB_ENV"
 
       - name: Install packaging tools
         run: |
