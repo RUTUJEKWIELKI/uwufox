@@ -98,7 +98,7 @@ jobs:
           rustup default "$RUST_TOOLCHAIN"
 
       - name: Bootstrap build dependencies
-        run: ./mach bootstrap --application-choice browser --no-interactive
+        run: ./mach --no-interactive bootstrap --application-choice browser
 
       - name: Fetch Clang and WASI sysroot
         run: scripts/fetch-clang-23.sh
@@ -245,7 +245,7 @@ jobs:
           rustup default "$RUST_TOOLCHAIN"
 
       - name: Bootstrap build dependencies
-        run: ./mach bootstrap --application-choice browser --no-interactive
+        run: ./mach --no-interactive bootstrap --application-choice browser
 
       - name: Fetch Clang and WASI sysroot
         run: scripts/fetch-clang-23.sh
