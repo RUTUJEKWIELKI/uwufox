@@ -69,7 +69,7 @@ jobs:
       - name: Expand build disk
         uses: easimon/maximize-build-space@v10
         with:
-          root-reserve-mb: 2048
+          root-reserve-mb: 8192
           swap-size-mb: 4096
           remove-dotnet: 'true'
           remove-android: 'true'
@@ -82,10 +82,19 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Configure mozbuild state directory
+      - name: Configure build state and cache directories
         run: |
-          mkdir -p "$RUNNER_TEMP/mozbuild"
-          echo "MOZBUILD_STATE_PATH=$RUNNER_TEMP/mozbuild" >> "$GITHUB_ENV"
+          mkdir -p "$GITHUB_WORKSPACE/.mozbuild" \
+            "$GITHUB_WORKSPACE/.rustup" \
+            "$GITHUB_WORKSPACE/.cargo" \
+            "$GITHUB_WORKSPACE/.tmp"
+          {
+            echo "MOZBUILD_STATE_PATH=$GITHUB_WORKSPACE/.mozbuild"
+            echo "RUSTUP_HOME=$GITHUB_WORKSPACE/.rustup"
+            echo "CARGO_HOME=$GITHUB_WORKSPACE/.cargo"
+            echo "TMPDIR=$GITHUB_WORKSPACE/.tmp"
+          } >> "$GITHUB_ENV"
+          echo "$GITHUB_WORKSPACE/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Install packaging tools
         run: |
@@ -215,7 +224,7 @@ jobs:
       - name: Expand build disk
         uses: easimon/maximize-build-space@v10
         with:
-          root-reserve-mb: 2048
+          root-reserve-mb: 8192
           swap-size-mb: 4096
           remove-dotnet: 'true'
           remove-android: 'true'
@@ -228,10 +237,19 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Configure mozbuild state directory
+      - name: Configure build state and cache directories
         run: |
-          mkdir -p "$RUNNER_TEMP/mozbuild"
-          echo "MOZBUILD_STATE_PATH=$RUNNER_TEMP/mozbuild" >> "$GITHUB_ENV"
+          mkdir -p "$GITHUB_WORKSPACE/.mozbuild" \
+            "$GITHUB_WORKSPACE/.rustup" \
+            "$GITHUB_WORKSPACE/.cargo" \
+            "$GITHUB_WORKSPACE/.tmp"
+          {
+            echo "MOZBUILD_STATE_PATH=$GITHUB_WORKSPACE/.mozbuild"
+            echo "RUSTUP_HOME=$GITHUB_WORKSPACE/.rustup"
+            echo "CARGO_HOME=$GITHUB_WORKSPACE/.cargo"
+            echo "TMPDIR=$GITHUB_WORKSPACE/.tmp"
+          } >> "$GITHUB_ENV"
+          echo "$GITHUB_WORKSPACE/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Install packaging tools
         run: |
