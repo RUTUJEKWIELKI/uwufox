@@ -28,8 +28,6 @@ permissions:
 env:
   MACH_MAIN_PID: "0"
   MOZ_BUILD_DATE: '${{ inputs.MOZ_BUILD_DATE }}'
-  MOZ_MAKE_FLAGS: -j$(nproc)
-  CARGO_BUILD_JOBS: $(nproc)
   MOZ_NOSPAM: "1"
   PRE_RELEASE: '${{ inputs.PRE_RELEASE }}'
   RUST_TOOLCHAIN: "1.99.1"
