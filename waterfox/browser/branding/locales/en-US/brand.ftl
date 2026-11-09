@@ -16,12 +16,12 @@
 ## For further details, consult:
 ## https://mozilla-l10n.github.io/styleguides/mozilla_general/#brands-copyright-and-trademark
 
--brand-shorter-name = Waterfox
--brand-short-name = Waterfox
--brand-shortcut-name = Waterfox
--brand-full-name = Waterfox
+-brand-shorter-name = Uwufox
+-brand-short-name = Uwufox
+-brand-shortcut-name = Uwufox
+-brand-full-name = Uwufox
 # This brand name can be used in messages where the product name needs to
 # remain unchanged across different versions (Nightly, Beta, etc.).
--brand-product-name = Waterfox
--vendor-short-name = BrowserWorks
-trademarkInfo = Waterfox and the Waterfox logos are trademarks of BrowserWorks.
+-brand-product-name = Uwufox
+-vendor-short-name = Uwufox
+trademarkInfo = Uwufox is an independent browser project.

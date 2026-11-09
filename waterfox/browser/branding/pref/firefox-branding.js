@@ -6,12 +6,12 @@
 
 pref(
   "startup.homepage_override_url",
-  "https://www.waterfox.com/releases/%DISPLAY_VERSION%/?update"
+  "https://github.com/RUTUJEKWIELKI/uwufox/releases/latest"
 );
 pref("startup.homepage_welcome_url", "about:welcome");
 pref(
   "startup.homepage_welcome_url.additional",
-  "https://www.waterfox.com/releases/%DISPLAY_VERSION%/?new"
+  "https://github.com/RUTUJEKWIELKI/uwufox/releases/latest"
 );
 // Interval: Time between checks for a new version (in seconds)
 pref("app.update.interval", 43200); // 12 hours
@@ -24,20 +24,20 @@ pref("app.update.promptWaitTime", 691200);
 // wizard.
 pref(
   "app.update.url.manual",
-  "https://www.waterfox.com/download/?reason=manual-update"
+  "https://github.com/RUTUJEKWIELKI/uwufox/releases/latest"
 );
-pref("app.update.url.details", "https://www.waterfox.com/releases/");
+pref("app.update.url.details", "https://github.com/RUTUJEKWIELKI/uwufox/releases");
 pref(
   "app.releaseNotesURL",
-  "https://www.waterfox.com/releases/%DISPLAY_VERSION%/?utm_source=waterfox-browser&utm_medium=waterfox-browser&utm_campaign=whatsnew"
+  "https://github.com/RUTUJEKWIELKI/uwufox/releases/latest"
 );
 pref(
   "app.releaseNotesURL.aboutDialog",
-  "https://www.waterfox.com/releases/%DISPLAY_VERSION%/?utm_source=waterfox-browser&utm_medium=waterfox-desktop&utm_campaign=about-dialog"
+  "https://github.com/RUTUJEKWIELKI/uwufox/releases/latest"
 );
 pref(
   "app.releaseNotesURL.prompt",
-  "https://www.waterfox.com/releases/%DISPLAY_VERSION%/?utm_source=waterfox-browser&utm_medium=waterfox-desktop&utm_campaign=updateprompt"
+  "https://github.com/RUTUJEKWIELKI/uwufox/releases/latest"
 );
 
 // The number of days a binary is permitted to be old

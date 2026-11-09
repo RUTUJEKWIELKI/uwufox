@@ -6,7 +6,7 @@
   background-image: url("chrome://branding/content/background.svg");
   background-position: center;
   background-size: cover;
-  color: #053361;
+  color: #402636;
   color-scheme: dark;
 }
 
@@ -52,7 +52,7 @@
 #trademark {
   font-size: xx-small;
   text-align: center;
-  color: #053361;
+  color: #402636;
   margin-block: 10px;
 }
 
@@ -60,6 +60,6 @@
   #checkForUpdatesButton,
   #downloadAndInstallButton,
   #updateButton {
-    color: #053361;
+    color: #402636;
   }
 }

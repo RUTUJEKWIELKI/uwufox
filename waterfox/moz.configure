@@ -5,8 +5,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 imply_option("MOZ_APP_UA_NAME", "Firefox")
-imply_option("MOZ_APP_PROFILE", "Waterfox")
-imply_option("--with-distribution-id", "net.waterfox")
+imply_option("MOZ_APP_PROFILE", "Uwufox")
+imply_option("--with-distribution-id", "org.uwufox")
 
 option(
     env="MOZ_APPUPDATE_URL",

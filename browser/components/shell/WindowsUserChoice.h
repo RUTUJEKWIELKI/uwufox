@@ -95,7 +95,7 @@ mozilla::UniquePtr<wchar_t[]> GenerateUserChoiceHash(const wchar_t* aExt,
 /*
  * Build a ProgID from a base and AUMI
  *
- * @param aProgIDBase   A base, such as WaterfoxHTML or WaterfoxURL
+ * @param aProgIDBase   A base, such as UwufoxHTML or UwufoxURL
  * @param aAumi         The AUMI of the installation
  *
  * @return Formatted ProgID.

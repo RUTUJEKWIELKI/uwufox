@@ -16,13 +16,13 @@ BEGIN
   BEGIN
       BLOCK "040904b0"
       BEGIN
-          VALUE "CompanyName", "BrowserWorks Ltd"
-          VALUE "FileDescription", "Waterfox"
+          VALUE "CompanyName", "Uwufox"
+          VALUE "FileDescription", "Uwufox"
           VALUE "FileVersion", MY_VERSION
           VALUE "InternalName", "7zSD.sfx"
           VALUE "LegalCopyright", "BrowserWorks Ltd"
           VALUE "OriginalFilename", "7zSD.sfx"
-          VALUE "ProductName", "Waterfox"
+          VALUE "ProductName", "Uwufox"
           VALUE "ProductVersion", MY_VERSION
       END
   END
