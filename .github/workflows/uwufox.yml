@@ -68,13 +68,24 @@ jobs:
       - name: Expand build disk
         uses: easimon/maximize-build-space@v10
         with:
-          root-reserve-mb: 16384
+          root-reserve-mb: 32768
           swap-size-mb: 4096
           remove-dotnet: 'true'
           remove-android: 'true'
           remove-haskell: 'true'
           remove-codeql: 'true'
           remove-docker-images: 'true'
+
+      - name: Verify runner root space
+        shell: bash
+        run: |
+          available_kb="$(df --block-size=1024 --output=avail / | tail -n 1)"
+          required_kb=$((8 * 1024 * 1024))
+          if (( available_kb < required_kb )); then
+            echo "::error::Only $((available_kb / 1024)) MiB are available on / after expanding the build volume; at least 8192 MiB are required."
+            exit 1
+          fi
+          df -h /
 
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -224,13 +235,24 @@ jobs:
       - name: Expand build disk
         uses: easimon/maximize-build-space@v10
         with:
-          root-reserve-mb: 16384
+          root-reserve-mb: 32768
           swap-size-mb: 4096
           remove-dotnet: 'true'
           remove-android: 'true'
           remove-haskell: 'true'
           remove-codeql: 'true'
           remove-docker-images: 'true'
+
+      - name: Verify runner root space
+        shell: bash
+        run: |
+          available_kb="$(df --block-size=1024 --output=avail / | tail -n 1)"
+          required_kb=$((8 * 1024 * 1024))
+          if (( available_kb < required_kb )); then
+            echo "::error::Only $((available_kb / 1024)) MiB are available on / after expanding the build volume; at least 8192 MiB are required."
+            exit 1
+          fi
+          df -h /
 
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
