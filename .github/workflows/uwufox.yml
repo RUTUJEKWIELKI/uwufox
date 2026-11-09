@@ -4,8 +4,7 @@ name: Uwufox Build
 on:
   push:
     branches:
-      - '**'
-  pull_request:
+      - current
   workflow_dispatch:
     inputs:
       release_tag:
