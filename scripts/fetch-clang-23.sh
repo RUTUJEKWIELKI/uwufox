@@ -3,8 +3,9 @@
 set -eu
 
 tc_base="https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/gecko.cache.level-3.toolchains.v3"
-host_dest="$HOME/.mozbuild/clang-23"
-sysroot="$HOME/.mozbuild/sysroot-wasm32-wasi"
+mozbuild_state="${MOZBUILD_STATE_PATH:-$HOME/.mozbuild}"
+host_dest="$mozbuild_state/clang-23"
+sysroot="$mozbuild_state/sysroot-wasm32-wasi"
 fetch_win64=0
 
 usage() {
@@ -132,7 +133,7 @@ esac
 install_clang "$host_ns" "$host_dest" "$host_clang" 1
 
 if [ "$fetch_win64" -eq 1 ] && [ "$host_ns" != "win64-clang-23" ]; then
-    win64_dest="$HOME/.mozbuild/clang-23-win64"
+    win64_dest="$mozbuild_state/clang-23-win64"
     install_clang "win64-clang-23" "$win64_dest" "$win64_dest/bin/clang.exe" 0
 fi
 

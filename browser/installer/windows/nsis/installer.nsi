@@ -462,19 +462,19 @@ Section "-Application" APP_IDX
   ; it doesn't cause problems always add them.
   ${SetUninstallKeys}
 
-  ; On install always add the WaterfoxHTML-, WaterfoxPDF-, and WaterfoxURL- keys.
-  ; An empty string is used for the 5th param because WaterfoxHTML- is not a
+  ; On install always add the UwufoxHTML-, UwufoxPDF-, and UwufoxURL- keys.
+  ; An empty string is used for the 5th param because UwufoxHTML- is not a
   ; protocol handler.
   ${GetLongPath} "$INSTDIR\${FileMainEXE}" $8
   StrCpy $2 "$\"$8$\" -osint -url $\"%1$\""
 
-  ; In Win8, the delegate execute handler picks up the value in WaterfoxURL- and
-  ; WaterfoxHTML- to launch the desktop browser when it needs to.
-  ${AddDisabledDDEHandlerValues} "WaterfoxHTML-$AppUserModelID" "$2" "$8,${IDI_DOCUMENT_ZERO_BASED}" \
+  ; In Win8, the delegate execute handler picks up the value in UwufoxURL- and
+  ; UwufoxHTML- to launch the desktop browser when it needs to.
+  ${AddDisabledDDEHandlerValues} "UwufoxHTML-$AppUserModelID" "$2" "$8,${IDI_DOCUMENT_ZERO_BASED}" \
                                  "${AppRegName} HTML Document" ""
-  ${AddDisabledDDEHandlerValues} "WaterfoxPDF-$AppUserModelID" "$2" "$8,${IDI_DOCUMENT_PDF_ZERO_BASED}" \
+  ${AddDisabledDDEHandlerValues} "UwufoxPDF-$AppUserModelID" "$2" "$8,${IDI_DOCUMENT_PDF_ZERO_BASED}" \
                                  "${AppRegName} PDF Document" ""
-  ${AddDisabledDDEHandlerValues} "WaterfoxURL-$AppUserModelID" "$2" "$8,${IDI_DOCUMENT_ZERO_BASED}" \
+  ${AddDisabledDDEHandlerValues} "UwufoxURL-$AppUserModelID" "$2" "$8,${IDI_DOCUMENT_ZERO_BASED}" \
                                  "${AppRegName} URL" "true"
 
   ; The keys below can be set in HKCU if needed.

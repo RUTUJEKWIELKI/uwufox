@@ -2,21 +2,6 @@
 name: Build
 
 on:
-  workflow_dispatch:
-    inputs:
-      MOZ_BUILD_DATE:
-        description: Build date (YYYYMMDDHHMMSS), shared by every platform build
-        required: true
-        type: string
-      PRE_RELEASE:
-        description: Mark the build as a pre-release
-        required: false
-        default: "true"
-        type: string
-      TAG_VERSION:
-        description: Display version
-        required: true
-        type: string
   workflow_call:
     inputs:
       MOZ_BUILD_DATE:

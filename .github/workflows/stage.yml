@@ -1,25 +1,6 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Stage
 on:
-  workflow_dispatch:
-    inputs:
-      DISPLAY_VERSION:
-        description: Input display version
-        required: true
-        type: string
-      PRE_RELEASE:
-        description: This is a pre-release (true or false)
-        required: true
-        type: string
-      SIGN_RUN_ID:
-        description: Sign workflow run id to pull artifacts from
-        required: true
-        type: string
-      manual_stage:
-        description: Force "manual stage" mode (use GitHub App token to download artifacts from a separate run)
-        required: false
-        default: 'true'
-        type: string
   workflow_call:
     inputs:
       DISPLAY_VERSION:

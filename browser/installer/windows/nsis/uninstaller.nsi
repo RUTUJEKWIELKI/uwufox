@@ -153,7 +153,7 @@ ShowUnInstDetails nevershow
 !define URLUninstallSurvey "https://qsurvey.mozilla.com/s3/FF-Desktop-Post-Uninstall?channel=${UpdateChannel}&version=${AppVersion}&osversion="
 
 ; Support for the profile refresh feature
-!define URLProfileRefreshHelp "https://www.waterfox.com/support/refresh-waterfox-reset-add-ons-and-settings/"
+!define URLProfileRefreshHelp "https://github.com/RUTUJEKWIELKI/uwufox/issues"
 
 ; Arguments to add to the command line when launching FileMainEXE for profile refresh
 !define ArgsProfileRefresh "-reset-profile -migration -uninstaller-profile-refresh"
@@ -501,27 +501,27 @@ Section "Uninstall"
     ${un.SetAppLSPCategories}
   ${EndIf}
 
-  ${un.RegCleanAppHandler} "WaterfoxHTML-$AppUserModelID"
-  ${un.RegCleanAppHandler} "WaterfoxPDF-$AppUserModelID"
-  ${un.RegCleanAppHandler} "WaterfoxURL-$AppUserModelID"
+  ${un.RegCleanAppHandler} "UwufoxHTML-$AppUserModelID"
+  ${un.RegCleanAppHandler} "UwufoxPDF-$AppUserModelID"
+  ${un.RegCleanAppHandler} "UwufoxURL-$AppUserModelID"
   ${un.RegCleanProtocolHandler} "http"
   ${un.RegCleanProtocolHandler} "https"
   ${un.RegCleanProtocolHandler} "mailto"
-  ${un.RegCleanFileHandler}  ".htm"   "WaterfoxHTML-$AppUserModelID"
-  ${un.RegCleanFileHandler}  ".html"  "WaterfoxHTML-$AppUserModelID"
-  ${un.RegCleanFileHandler}  ".shtml" "WaterfoxHTML-$AppUserModelID"
-  ${un.RegCleanFileHandler}  ".xht"   "WaterfoxHTML-$AppUserModelID"
-  ${un.RegCleanFileHandler}  ".xhtml" "WaterfoxHTML-$AppUserModelID"
-  ${un.RegCleanFileHandler}  ".oga"   "WaterfoxHTML-$AppUserModelID"
-  ${un.RegCleanFileHandler}  ".ogg"   "WaterfoxHTML-$AppUserModelID"
-  ${un.RegCleanFileHandler}  ".ogv"   "WaterfoxHTML-$AppUserModelID"
-  ${un.RegCleanFileHandler}  ".webm"  "WaterfoxHTML-$AppUserModelID"
-  ${un.RegCleanFileHandler}  ".svg"   "WaterfoxHTML-$AppUserModelID"
-  ${un.RegCleanFileHandler}  ".webp"  "WaterfoxHTML-$AppUserModelID"
-  ${un.RegCleanFileHandler}  ".avif"  "WaterfoxHTML-$AppUserModelID"
-  ${un.RegCleanFileHandler}  ".jxl"   "WaterfoxHTML-$AppUserModelID"
+  ${un.RegCleanFileHandler}  ".htm"   "UwufoxHTML-$AppUserModelID"
+  ${un.RegCleanFileHandler}  ".html"  "UwufoxHTML-$AppUserModelID"
+  ${un.RegCleanFileHandler}  ".shtml" "UwufoxHTML-$AppUserModelID"
+  ${un.RegCleanFileHandler}  ".xht"   "UwufoxHTML-$AppUserModelID"
+  ${un.RegCleanFileHandler}  ".xhtml" "UwufoxHTML-$AppUserModelID"
+  ${un.RegCleanFileHandler}  ".oga"   "UwufoxHTML-$AppUserModelID"
+  ${un.RegCleanFileHandler}  ".ogg"   "UwufoxHTML-$AppUserModelID"
+  ${un.RegCleanFileHandler}  ".ogv"   "UwufoxHTML-$AppUserModelID"
+  ${un.RegCleanFileHandler}  ".webm"  "UwufoxHTML-$AppUserModelID"
+  ${un.RegCleanFileHandler}  ".svg"   "UwufoxHTML-$AppUserModelID"
+  ${un.RegCleanFileHandler}  ".webp"  "UwufoxHTML-$AppUserModelID"
+  ${un.RegCleanFileHandler}  ".avif"  "UwufoxHTML-$AppUserModelID"
+  ${un.RegCleanFileHandler}  ".jxl"   "UwufoxHTML-$AppUserModelID"
 
-  ${un.RegCleanFileHandler}  ".pdf"   "WaterfoxPDF-$AppUserModelID"
+  ${un.RegCleanFileHandler}  ".pdf"   "UwufoxPDF-$AppUserModelID"
 
   SetShellVarContext all  ; Set SHCTX to HKLM
   ${un.GetSecondInstallPath} "Software\BrowserWorks" $R9
@@ -548,22 +548,22 @@ Section "Uninstall"
 
   ; Remove old protocol handler and StartMenuInternet keys without install path
   ; hashes, but only if they're for this installation.  We've never supported
-  ; bare WaterfoxPDF.
-  ReadRegStr $0 HKLM "Software\Classes\WaterfoxHTML\DefaultIcon" ""
+  ; bare UwufoxPDF.
+  ReadRegStr $0 HKLM "Software\Classes\UwufoxHTML\DefaultIcon" ""
   StrCpy $0 $0 -2
   ${If} $0 == "$INSTDIR\${FileMainEXE}"
-    DeleteRegKey HKLM "Software\Classes\WaterfoxHTML"
-    DeleteRegKey HKLM "Software\Classes\WaterfoxURL"
+    DeleteRegKey HKLM "Software\Classes\UwufoxHTML"
+    DeleteRegKey HKLM "Software\Classes\UwufoxURL"
     ${StrFilter} "${FileMainEXE}" "+" "" "" $R9
     DeleteRegKey HKLM "Software\Clients\StartMenuInternet\$R9"
     DeleteRegValue HKLM "Software\RegisteredApplications" "$R9"
     DeleteRegValue HKLM "Software\RegisteredApplications" "${AppRegName}"
   ${EndIf}
-  ReadRegStr $0 HKCU "Software\Classes\WaterfoxHTML\DefaultIcon" ""
+  ReadRegStr $0 HKCU "Software\Classes\UwufoxHTML\DefaultIcon" ""
   StrCpy $0 $0 -2
   ${If} $0 == "$INSTDIR\${FileMainEXE}"
-    DeleteRegKey HKCU "Software\Classes\WaterfoxHTML"
-    DeleteRegKey HKCU "Software\Classes\WaterfoxURL"
+    DeleteRegKey HKCU "Software\Classes\UwufoxHTML"
+    DeleteRegKey HKCU "Software\Classes\UwufoxURL"
     ${StrFilter} "${FileMainEXE}" "+" "" "" $R9
     DeleteRegKey HKCU "Software\Clients\StartMenuInternet\$R9"
     DeleteRegValue HKCU "Software\RegisteredApplications" "$R9"

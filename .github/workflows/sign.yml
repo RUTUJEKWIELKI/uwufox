@@ -1,17 +1,6 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Sign
 on:
-  workflow_dispatch:
-    inputs:
-      build_run_id:
-        description: Reuse artifacts from a specific build workflow run (for pipeline builds, pass the Deployment run id; the fallback only sees standalone Build runs)
-        required: false
-        type: string
-      manual_resign:
-        description: Force "manual re-sign" mode (use GitHub App token to download artifacts from a separate run)
-        required: false
-        default: 'true'
-        type: string
   workflow_call:
     inputs:
       build_run_id:

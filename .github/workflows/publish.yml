@@ -1,17 +1,6 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Publish
 on:
-  workflow_dispatch:
-    inputs:
-      sign_run_id:
-        description: Sign workflow run id to publish from (for pipeline builds, pass the Deployment run id; the fallback only sees standalone Sign runs)
-        required: false
-        type: string
-      manual_publish:
-        description: Force "manual publish" mode (use GitHub App token to download artifacts from a separate run)
-        required: false
-        default: 'true'
-        type: string
   workflow_call:
     inputs:
       sign_run_id:

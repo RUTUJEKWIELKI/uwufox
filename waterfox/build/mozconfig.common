@@ -1,4 +1,4 @@
-# Waterfox shared mozconfig fragment, sourced by every root .mozconfig* file.
+# Uwufox shared mozconfig fragment, sourced by every root .mozconfig* file.
 # It must never write to stdout or stderr: mach's mozconfig loader treats any
 # stray output while sourcing as a parse error.
 #
@@ -22,8 +22,9 @@
 #                        cross-or-native: cross, falling back to MOZ_PGO=1
 #                        empty: no PGO options
 
-clang23="$HOME/.mozbuild/clang-23"
-wasi_sysroot="$HOME/.mozbuild/sysroot-wasm32-wasi"
+mozbuild_state="${MOZBUILD_STATE_PATH:-$HOME/.mozbuild}"
+clang23="$mozbuild_state/clang-23"
+wasi_sysroot="$mozbuild_state/sysroot-wasm32-wasi"
 
 if [ -n "$wfx_target" ]; then
     case "$wfx_target" in
@@ -51,7 +52,7 @@ if [ -n "$wfx_target" ]; then
         export HOST_CXX="$CXX"
     fi
 else
-    # Local development and the release sign pipeline: the bootstrapped
+    # Local development and the standalone release build: the bootstrapped
     # toolchain may be absent, so fall back to the system clang.
     test "$wfx_dev" = "1" || exit 1
     wfx_os=
@@ -126,8 +127,8 @@ if [ -n "$wfx_target" ]; then
     ac_add_options --enable-bootstrap=-clang,-sysroot-wasm32-wasi,-sccache
     if test -x "$(command -v sccache)"; then
         ac_add_options --with-ccache=sccache
-    elif test -f "$HOME/.mozbuild/sccache/sccache"; then
-        ac_add_options --with-ccache="$HOME"/.mozbuild/sccache/sccache
+    elif test -f "$mozbuild_state/sccache/sccache"; then
+        ac_add_options --with-ccache="$mozbuild_state"/sccache/sccache
     fi
     if [ "$wfx_os" = "windows" ]; then
         ac_add_options --enable-default-browser-agent
@@ -160,6 +161,7 @@ if [ -n "$wfx_target" ]; then
         ac_add_options MAR_CHANNEL_ID=beta
         ac_add_options ACCEPTED_MAR_CHANNEL_IDS=beta
     fi
+    ac_add_options MOZ_APPUPDATE_URL="${MOZ_APPUPDATE_URL:-https://github.com/RUTUJEKWIELKI/uwufox/releases/latest/download/update-${wfx_os}.xml}"
     ac_add_options --enable-updater
 
     ac_add_options --target=$wfx_target
@@ -175,16 +177,16 @@ else
     ac_add_options --enable-bootstrap=-clang,-sysroot-wasm32-wasi
     ac_add_options --enable-optimize="-Os -w"
     ac_add_options --enable-tests
-    ac_add_options --enable-unverified-updates
     ac_add_options --enable-updater
-    ac_add_options MOZ_APPUPDATE_URL=http://127.0.0.1:8000/update.xml
+    ac_add_options MOZ_APPUPDATE_URL="${MOZ_APPUPDATE_URL:-http://127.0.0.1:8000/update.xml}"
 fi
 
-ac_add_options --with-app-basename=Waterfox
-ac_add_options --with-app-name=waterfox
+ac_add_options --with-app-basename=Uwufox
+ac_add_options --with-app-name=uwufox
 ac_add_options --with-branding=waterfox/browser/branding
-ac_add_options --with-distribution-id=net.waterfox
+ac_add_options --with-distribution-id=org.uwufox
 ac_add_options --without-onnx-runtime
+ac_add_options --enable-unverified-updates
 if [ "$wfx_os" = "windows" ]; then
     ac_add_options --with-redist
 fi
@@ -207,8 +209,8 @@ if [ -n "$wfx_target" ]; then
 else
     if test -x "$(command -v sccache)"; then
         ac_add_options --with-ccache=sccache
-    elif test -f "$HOME/.mozbuild/sccache/sccache"; then
-        ac_add_options --with-ccache="$HOME"/.mozbuild/sccache/sccache
+    elif test -f "$mozbuild_state/sccache/sccache"; then
+        ac_add_options --with-ccache="$mozbuild_state"/sccache/sccache
     fi
 
     mk_add_options AUTOCLOBBER=1

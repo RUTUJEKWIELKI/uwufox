@@ -1125,7 +1125,7 @@ Function ShouldPromptForProfileCleanup
 
   ; We have at least one profile present. If we don't have any installations,
   ; then we need to show the re-install prompt. We'll say there's an
-  ; installation present if HKCR\WaterfoxURL* exists and points to a real path.
+  ; installation present if HKCR\UwufoxURL* exists and points to a real path.
   StrCpy $0 0
   StrCpy $R9 ""
   ${Do}
@@ -1136,7 +1136,7 @@ Function ShouldPromptForProfileCleanup
       ${Break}
     ${EndIf}
     ${WordFind} "$1" "-" "+1{" $2
-    ${If} $2 == "WaterfoxURL"
+    ${If} $2 == "UwufoxURL"
       ClearErrors
       ReadRegStr $2 HKCR "$1\DefaultIcon" ""
       ${IfNot} ${Errors}

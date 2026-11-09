@@ -1,0 +1,12 @@
+#!/bin/sh
+wfx_target=x86_64-pc-linux-gnu
+wfx_cross_build=
+wfx_lto_mode=thin
+wfx_optimize="-Os -w"
+wfx_rustflags=
+wfx_rustc_bootstrap=
+wfx_pgo=
+
+. "$topsrcdir/waterfox/build/mozconfig.common"
+
+mk_add_options MOZ_OBJDIR=./obj-x86_64-pc-linux-gnu

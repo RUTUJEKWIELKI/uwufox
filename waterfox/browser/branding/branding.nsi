@@ -8,27 +8,23 @@
 
 # BrandFullNameInternal is used for some registry and file system values
 # instead of BrandFullName and typically should not be modified.
-!define BrandFullNameInternal "Waterfox"
-!define BrandFullName         "Waterfox"
-!define CompanyName           "BrowserWorks Ltd"
-!define URLInfoAbout          "https://www.waterfox.com"
-!define URLUpdateInfo         "https://www.waterfox.com/releases/${AppVersion}"
-!define HelpLink              "https://www.waterfox.com/support/waterfox-help/"
+!define BrandFullNameInternal "Uwufox"
+!define BrandFullName         "Uwufox"
+!define CompanyName           "Uwufox"
+!define URLInfoAbout          "https://github.com/RUTUJEKWIELKI/uwufox"
+!define URLUpdateInfo         "https://github.com/RUTUJEKWIELKI/uwufox/releases/latest"
+!define HelpLink              "https://github.com/RUTUJEKWIELKI/uwufox/issues"
 
-; The OFFICIAL define is a workaround to support different urls for Release and
-; Beta since they share the same branding when building with other branches that
-; set the update channel to beta.
-!define OFFICIAL
 !define URLStubDownloadX86 ""
-!define URLStubDownloadAMD64 "https://cdn.waterfox.com/waterfox/releases/latest/windows"
+!define URLStubDownloadAMD64 ""
 !define URLStubDownloadAArch64 ""
-!define URLManualDownload "https://www.waterfox.com/download/"
-!define URLSystemRequirements "https://www.waterfox.com/support/desktop/system-requirements/"
+!define URLManualDownload "https://github.com/RUTUJEKWIELKI/uwufox/releases/latest"
+!define URLSystemRequirements "https://github.com/RUTUJEKWIELKI/uwufox/wiki"
 !define Channel "release"
 
 # The installer's certificate name and issuer expected by the stub installer
-!define CertNameDownload   "WATERFOX LIMITED"
-!define CertIssuerDownload "GlobalSign GCC R45 EV CodeSigning CA 2020"
+!define CertNameDownload   "Uwufox"
+!define CertIssuerDownload "Uwufox Code Signing"
 
 # Dialog units are used so the UI displays correctly with the system's DPI
 # settings. These are tweaked to look good with the en-US strings; ideally
