@@ -43,6 +43,9 @@ if [ -n "$wfx_target" ]; then
         clang23_cl="$clang23_bin/clang-cl"
         export CC="$clang23_cl"
         export CXX="$clang23_cl"
+        # Keep the COFF library manager in sync with clang-cl. The bootstrap
+        # toolchain may provide an older llvm-lib that cannot read LLVM 23 objects.
+        export AR="$clang23_bin/llvm-lib"
         export HOST_CC="$clang23_cc"
         export HOST_CXX="$clang23_cxx"
     else
