@@ -68,7 +68,7 @@ jobs:
       - name: Expand build disk
         uses: easimon/maximize-build-space@v10
         with:
-          root-reserve-mb: 16384
+          root-reserve-mb: 32768
           temp-reserve-mb: 16384
           swap-size-mb: 4096
           remove-dotnet: 'true'
@@ -236,7 +236,7 @@ jobs:
       - name: Expand build disk
         uses: easimon/maximize-build-space@v10
         with:
-          root-reserve-mb: 16384
+          root-reserve-mb: 32768
           temp-reserve-mb: 16384
           swap-size-mb: 4096
           remove-dotnet: 'true'
