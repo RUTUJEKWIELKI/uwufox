@@ -123,7 +123,7 @@ jobs:
       - name: Install packaging tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y msitools xvfb zip zstd
+          sudo apt-get install -y msitools xvfb zip zstd curl
 
       - name: Install sccache
         run: |
@@ -344,7 +344,7 @@ jobs:
       - name: Install packaging tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y msitools xvfb zip zstd
+          sudo apt-get install -y msitools xvfb zip zstd curl
 
       - name: Install sccache
         run: |
