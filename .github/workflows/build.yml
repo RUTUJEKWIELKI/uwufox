@@ -34,6 +34,9 @@ env:
   PRE_RELEASE: '${{ inputs.PRE_RELEASE }}'
   RUST_TOOLCHAIN: "1.99.1"
   TAG_VERSION: '${{ inputs.TAG_VERSION }}'
+  CC: sccache cc
+  CXX: sccache c++
+  RCCACHE_PROG: sccache
 
 jobs:
   metadata:
