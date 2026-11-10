@@ -55,7 +55,7 @@ jobs:
     name: Linux x86-64
     needs: resolve-auto-version
     runs-on: ubuntu-24.04
-    timeout-minutes: 360
+    timeout-minutes: 480
     env:
       MOZ_APPUPDATE_URL: https://github.com/${{ github.repository }}/releases/latest/download/update-linux.xml
       RELEASE_TAG: ${{ inputs.release_tag || needs.resolve-auto-version.outputs.release_tag || '' }}
@@ -133,9 +133,21 @@ jobs:
       - name: Setup sccache
         shell: bash
         run: |
-          echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
+          # Find sccache binary
+          SCCACHE_PATH="$(which sccache 2>/dev/null || echo '$HOME/.cargo/bin/sccache')"
+          if [[ ! -x "$SCCACHE_PATH" ]]; then
+            SCCACHE_PATH="$HOME/.cargo/bin/sccache"
+          fi
+          # Setup sccache for C/C++ compilation
+          echo "CC=sccache cc" >> "$GITHUB_ENV"
+          echo "CXX=sccache c++" >> "$GITHUB_ENV"
+          # Setup sccache for Rust
+          echo "RCCACHE_PROG=$SCCACHE_PATH" >> "$GITHUB_ENV"
           echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+          echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
           echo "MOZ_RUST_DEFAULT_TOOLCHAIN=$RUST_TOOLCHAIN" >> "$GITHUB_ENV"
+          # Ensure sccache is in PATH
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Cache Rust toolchain
         uses: actions/cache@v4
@@ -224,7 +236,7 @@ jobs:
     name: ${{ matrix.target_name }}
     needs: resolve-auto-version
     runs-on: ubuntu-24.04
-    timeout-minutes: 360
+    timeout-minutes: 480
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -327,6 +339,38 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y msitools xvfb zip zstd
+
+      - name: Install sccache
+        uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+        with:
+          version: "0.7.5"
+
+      - name: Setup sccache
+        shell: bash
+        run: |
+          # Find sccache binary
+          SCCACHE_PATH="$(which sccache 2>/dev/null || echo '$HOME/.cargo/bin/sccache')"
+          if [[ ! -x "$SCCACHE_PATH" ]]; then
+            SCCACHE_PATH="$HOME/.cargo/bin/sccache"
+          fi
+          # Setup sccache for C/C++ compilation
+          echo "CC=sccache cc" >> "$GITHUB_ENV"
+          echo "CXX=sccache c++" >> "$GITHUB_ENV"
+          # Setup sccache for Rust
+          echo "RCCACHE_PROG=$SCCACHE_PATH" >> "$GITHUB_ENV"
+          echo "MOZ_RUST_DEFAULT_TOOLCHAIN=$RUST_TOOLCHAIN" >> "$GITHUB_ENV"
+          # Ensure sccache is in PATH
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Cache Rust toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.rustup
+            ~/.cargo
+          key: rust-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            rust-${{ runner.os }}-
 
       - name: Install Rust
         run: |
