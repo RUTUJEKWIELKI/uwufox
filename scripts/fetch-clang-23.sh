@@ -132,6 +132,17 @@ esac
 
 install_clang "$host_ns" "$host_dest" "$host_clang" 1
 
+case "${TARGET_NAME:-}" in
+    windows-*)
+        windows_linker="$host_dest/bin/lld-link"
+        if [ ! -x "$windows_linker" ]; then
+            echo "fetch-clang-23: ERROR: matching Windows linker not found at $windows_linker" >&2
+            exit 1
+        fi
+        "$windows_linker" --version
+        ;;
+esac
+
 if [ "$fetch_win64" -eq 1 ] && [ "$host_ns" != "win64-clang-23" ]; then
     win64_dest="$mozbuild_state/clang-23-win64"
     install_clang "win64-clang-23" "$win64_dest" "$win64_dest/bin/clang.exe" 0
