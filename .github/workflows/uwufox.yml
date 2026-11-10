@@ -126,7 +126,15 @@ jobs:
           sudo apt-get install -y msitools xvfb zip zstd
 
       - name: Install sccache
-        uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+        run: |
+          # Install sccache manually
+          if ! command -v sccache >/dev/null 2>&1; then
+            curl -L --retry 5 --fail -o "$RUNNER_TEMP/sccache.tar.gz" \
+              "https://github.com/mozilla/sccache/releases/download/v0.7.5/sccache-v0.7.5-x86_64-unknown-linux-gnu.tar.gz"
+            tar -xzf "$RUNNER_TEMP/sccache.tar.gz" -C "$HOME/.cargo/bin/" --strip-components=1
+            chmod +x "$HOME/.cargo/bin/sccache"
+          fi
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Setup sccache
         shell: bash
@@ -339,7 +347,15 @@ jobs:
           sudo apt-get install -y msitools xvfb zip zstd
 
       - name: Install sccache
-        uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+        run: |
+          # Install sccache manually
+          if ! command -v sccache >/dev/null 2>&1; then
+            curl -L --retry 5 --fail -o "$RUNNER_TEMP/sccache.tar.gz" \
+              "https://github.com/mozilla/sccache/releases/download/v0.7.5/sccache-v0.7.5-x86_64-unknown-linux-gnu.tar.gz"
+            tar -xzf "$RUNNER_TEMP/sccache.tar.gz" -C "$HOME/.cargo/bin/" --strip-components=1
+            chmod +x "$HOME/.cargo/bin/sccache"
+          fi
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Setup sccache
         shell: bash
