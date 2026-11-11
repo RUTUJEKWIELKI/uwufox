@@ -99,48 +99,8 @@ jobs:
           name: build-metadata
           path: artifacts/build-metadata.env
 
-  prepare-assets:
-    name: Build asset snapshot
-    runs-on:
-      - ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          filter: blob:none
-          sparse-checkout: |
-            scripts
-            services/settings
-            waterfox/browser/components/blocker/assets
-            waterfox/browser/components/blocker/scripts
-
-      - name: Update bundled blocker assets
-        shell: bash
-        run: node waterfox/browser/components/blocker/scripts/update-bundled-assets.js
-
-      - name: Update offline Remote Settings dumps
-        shell: bash
-        run: python3 scripts/update-remote-settings-dumps.py
-
-      - name: Archive build asset snapshot
-        shell: bash
-        run: |
-          mkdir -p artifacts
-          tar -caf artifacts/build-assets-snapshot.tar.zst \
-            waterfox/browser/components/blocker/assets \
-            services/settings/dumps \
-            services/settings/static-dumps
-
-      - name: Upload build asset snapshot
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-assets-snapshot
-          path: artifacts/build-assets-snapshot.tar.zst
-
   compile:
     name: ${{ matrix.platform }} unsigned
-    needs: prepare-assets
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     strategy:
