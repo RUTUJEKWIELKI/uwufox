@@ -1,0 +1,17 @@
+# Example only. This file does NOT activate Cirun.
+# After connecting your cloud account in Cirun, copy to .cirun.yml and
+# adjust cloud/region/instance/image to the cloud you actually use.
+# Cirun's Open Source plan is free; the VM, disk, and network can be billed
+# by your cloud provider. Never commit your cloud credentials.
+runners:
+  - name: uwufox-build
+    cloud: gcp
+    region: us-central1-b
+    instance_type: e2-standard-8
+    machine_image: projects/ubuntu-os-cloud/global/images/family/ubuntu-2204-lts
+    preemptible: false
+    extra_config:
+      baseDisk:
+        diskSizeGb: 200
+    labels:
+      - cirun-uwufox-build
