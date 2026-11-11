@@ -29,9 +29,9 @@ jobs:
               per_page: 100,
             });
             const names = result.map(a => a.name);
-            const required = ['linux-build', 'windows-x86_64-pc-windows-msvc-build', 'windows-aarch64-pc-windows-msvc-build'];
+            const required = ['linux-build', 'linux-aarch64-build', 'windows-x86_64-pc-windows-msvc-build', 'windows-aarch64-pc-windows-msvc-build', 'macos-x86_64-apple-darwin-build', 'macos-aarch64-apple-darwin-build'];
             for (const name of required) {
-              if (!names.includes(name)) core.warning('Missing platform artifact: ' + name);
+              if (!names.includes(name)) core.setFailed('Missing platform artifact: ' + name);
             }
             if (!names.includes('build-metadata')) {
               core.setFailed('Missing build-metadata artifact');
