@@ -14,11 +14,6 @@ jobs:
     name: Validate unsigned build artifacts
     runs-on: ubuntu-24.04
     steps:
-      - name: Download build metadata
-        uses: actions/download-artifact@v4
-        with:
-          name: build-metadata
-          path: build-metadata
       - name: Check finished platform artifacts
         uses: actions/github-script@v7
         with:
@@ -37,9 +32,4 @@ jobs:
               core.setFailed('Missing build-metadata artifact');
             }
             core.info('Unsigned build artifacts: ' + names.join(', '));
-      - name: Upload staging metadata
-        uses: actions/upload-artifact@v4
-        with:
-          name: unsigned-staging-metadata
-          path: build-metadata/build-metadata.env
-          if-no-files-found: error
+            await core.summary.addHeading('Unsigned UwUfox build artifacts').addRaw(names.join(', ')).write();
