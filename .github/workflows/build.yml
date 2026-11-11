@@ -17,6 +17,14 @@ on:
         description: Display version
         required: true
         type: string
+      BUILD_RUNNER:
+        description: Runner backend for compiling (Cirun requires .cirun.yml and a connected cloud)
+        required: false
+        default: github
+        type: choice
+        options:
+          - github
+          - cirun
   workflow_call:
     inputs:
       MOZ_BUILD_DATE:
@@ -29,6 +37,10 @@ on:
       TAG_VERSION:
         required: true
         type: string
+      BUILD_RUNNER:
+        required: false
+        type: string
+        default: github
     outputs:
       versiondisplay:
         description: Display version used for this build
@@ -141,7 +153,8 @@ jobs:
   compile:
     name: ${{ matrix.platform }} unsigned
     needs: prepare-assets
-    runs-on: ubuntu-24.04
+    # Unique Cirun runner per matrix job, standard runner unless explicitly enabled.
+    runs-on: ${{ inputs.BUILD_RUNNER == 'cirun' && format('cirun-uwufox-build--{0}-{1}', github.run_id, matrix.platform) || 'ubuntu-24.04' }}
     timeout-minutes: 360
     strategy:
       fail-fast: false
@@ -190,6 +203,7 @@ jobs:
       SCCACHE_DIR: ${{ github.workspace }}/.sccache
     steps:
       - name: Expand disk space for Gecko
+        if: ${{ inputs.BUILD_RUNNER != 'cirun' }}
         uses: easimon/maximize-build-space@v10
         with:
           root-reserve-mb: 16384
