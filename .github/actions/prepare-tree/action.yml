@@ -4,7 +4,7 @@ description: Shared build job setup that runs between checkout and mach build
 
 inputs:
   sccache-cache-name:
-    description: Namespace sccache cache name (empty skips sccache setup)
+    description: GitHub Actions sccache cache name (empty skips sccache setup)
     default: ""
   apt-packages:
     description: Space separated apt packages to install (empty skips apt)
@@ -109,7 +109,7 @@ runs:
         printf 'WFX_L10N_LOCALES=%s\n' "$locales" >> "$GITHUB_ENV"
 
     - name: Download build asset snapshot
-      uses: namespace-actions/download-artifact@7cbad919e4b0e09f17e9d6311a444ff002992b5b # v2.0.1
+      uses: actions/download-artifact@v4
       with:
         name: build-assets-snapshot
         path: artifacts
