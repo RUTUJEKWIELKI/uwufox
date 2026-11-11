@@ -183,12 +183,17 @@ jobs:
       MOZCONFIG: waterfox/build/mozconfig-${{ matrix.arch }}
       ARTIFACT_NAME: ${{ matrix.artifact }}
       WINEDEBUG: '-all'
+      # These files are huge; keep them off the runner's system/root partition.
+      MOZBUILD_STATE_PATH: ${{ github.workspace }}/.mozbuild
+      CARGO_HOME: ${{ github.workspace }}/.cargo
+      XDG_CACHE_HOME: ${{ github.workspace }}/.cache
+      SCCACHE_DIR: ${{ github.workspace }}/.sccache
     steps:
       - name: Expand disk space for Gecko
         uses: easimon/maximize-build-space@v10
         with:
-          root-reserve-mb: 8192
-          temp-reserve-mb: 2048
+          root-reserve-mb: 16384
+          temp-reserve-mb: 1024
           swap-size-mb: 2048
           remove-dotnet: 'true'
           remove-android: 'true'
@@ -200,6 +205,20 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
+
+      - name: Prepare writable cache directories on build volume
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$MOZBUILD_STATE_PATH" "$CARGO_HOME" "$XDG_CACHE_HOME" "$SCCACHE_DIR" "$GITHUB_WORKSPACE/.tmp"
+          echo "TMPDIR=$GITHUB_WORKSPACE/.tmp" >> "$GITHUB_ENV"
+          echo "TMP=$GITHUB_WORKSPACE/.tmp" >> "$GITHUB_ENV"
+          echo "TEMP=$GITHUB_WORKSPACE/.tmp" >> "$GITHUB_ENV"
+          echo "System/root filesystem (GitHub runner logs live here):"
+          df -h /
+          echo "Checkout/build filesystem:"
+          df -h "$GITHUB_WORKSPACE"
+          echo "Rust toolchain remains at ${RUSTUP_HOME:-$HOME/.rustup}; Clang, Cargo and temp files live on the build volume."
 
       - name: Prepare tree
         uses: ./.github/actions/prepare-tree
@@ -216,7 +235,7 @@ jobs:
           if [[ "$ARCH" == *apple-darwin ]]; then
             echo "MOZ_PKG_FORMAT=TAR" >> "$GITHUB_ENV"
           fi
-          df -h /
+          df -h / "$GITHUB_WORKSPACE"
           free -h
           nproc
 
@@ -227,7 +246,7 @@ jobs:
           monitor() {
             while sleep 60; do
               echo "::group::Resource usage $(date -u +%H:%M:%S)"
-              df -h /
+              df -h / "$GITHUB_WORKSPACE"
               free -h
               echo "::endgroup::"
             done
