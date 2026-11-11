@@ -116,9 +116,9 @@ jobs:
       - name: Configure build parallelism
         shell: bash
         run: |
-          jobs="$(nproc)"
-          echo "MOZ_MAKE_FLAGS=-j${jobs}" >> "$GITHUB_ENV"
-          echo "CARGO_BUILD_JOBS=${jobs}" >> "$GITHUB_ENV"
+          # Keep nested Rust and C++ compiler workers within standard runner memory.
+          echo "MOZ_MAKE_FLAGS=-j2" >> "$GITHUB_ENV"
+          echo "CARGO_BUILD_JOBS=1" >> "$GITHUB_ENV"
 
       - name: Install packaging tools
         run: |
@@ -332,9 +332,9 @@ jobs:
       - name: Configure build parallelism
         shell: bash
         run: |
-          jobs="$(nproc)"
-          echo "MOZ_MAKE_FLAGS=-j${jobs}" >> "$GITHUB_ENV"
-          echo "CARGO_BUILD_JOBS=${jobs}" >> "$GITHUB_ENV"
+          # Keep nested Rust and C++ compiler workers within standard runner memory.
+          echo "MOZ_MAKE_FLAGS=-j2" >> "$GITHUB_ENV"
+          echo "CARGO_BUILD_JOBS=1" >> "$GITHUB_ENV"
 
       - name: Install packaging tools
         run: |
