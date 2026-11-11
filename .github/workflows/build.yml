@@ -47,6 +47,10 @@ env:
   PRE_RELEASE: '${{ inputs.PRE_RELEASE }}'
   RUST_TOOLCHAIN: "1.99.1"
   TAG_VERSION: '${{ inputs.TAG_VERSION }}'
+  UWUFOX_CI_LOW_RESOURCE: '1'
+  MOZ_MAKE_FLAGS: '-j2'
+  CARGO_BUILD_JOBS: '1'
+  CARGO_INCREMENTAL: '0'
 
 jobs:
   metadata:
@@ -134,247 +138,64 @@ jobs:
           name: build-assets-snapshot
           path: artifacts/build-assets-snapshot.tar.zst
 
-  build-windows-x64-stage-1:
-    name: Windows x64 PGO generate (stage 1)
-    needs:
-      - prepare-assets
-    runs-on:
-      - ubuntu-24.04
-    timeout-minutes: 120
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-windows-x64-stage-1
-      cancel-in-progress: true
-    env:
-      ARCH: 'x86_64-pc-windows-msvc'
-      MOZCONFIG: 'waterfox/build/mozconfig-x86_64-pc-windows-msvc'
-      WINEDEBUG: '-all'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-
-      - name: Prepare tree
-        uses: ./.github/actions/prepare-tree
-        with:
-          sccache-cache-name: wf-build-windows-x64-stage1
-          apt-packages: msitools zstd
-          rust-target: x86_64-pc-windows-msvc
-          tag-version: ${{ inputs.TAG_VERSION }}
-          pre-release: ${{ inputs.PRE_RELEASE }}
-
-      - name: Build instrumented binary
-        shell: bash
-        run: |
-          export GEN_PGO=1
-          ./mach build
-
-      - name: Package instrumented binary
-        shell: bash
-        run: ./mach package
-
-      - name: Upload Windows x64 PGO generate outputs
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-${{ env.ARCH }}-pgo-generate
-          path: obj-${{ env.ARCH }}/dist/waterfox
-
-  build-windows-x64-stage-2:
-    name: Windows x64 PGO profile (stage 2)
-    needs:
-      - build-windows-x64-stage-1
-    runs-on: windows-2025
-    timeout-minutes: 120
-    defaults:
-      run:
-        shell: bash
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-windows-x64-stage-2
-      cancel-in-progress: true
-    env:
-      ARCH: 'x86_64-pc-windows-msvc'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          filter: blob:none
-          sparse-checkout: |
-            build
-            python
-            scripts
-            taskcluster/scripts
-            testing/gtest
-            testing/mozbase
-            testing/profiles
-            testing/talos/talos
-            testing/web-platform/tests/tools/third_party/certifi
-            third_party/python
-            third_party/webkit
-            tools/quitter
-            waterfox/build
-
-      - name: Setup profile packages
-        run: |
-          curl -L https://ftp.mozilla.org/pub/mozilla/libraries/win32/MozillaBuildSetup-4.2.1.exe --output MozillaBuildSetup.exe
-          7z x MozillaBuildSetup.exe -o/c/mozilla-build
-          scripts/fetch-clang-23.sh
-
-      - name: Install Rust toolchain
-        run: rustup default "${RUST_TOOLCHAIN}"
-
-      - name: Download Windows x64 PGO generate outputs
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-${{ env.ARCH }}-pgo-generate
-          path: obj-${{ env.ARCH }}/dist/waterfox
-
-      - name: Run PGO profile
-        shell: pwsh
-        run: |
-          Remove-Item .mozconfig
-          $env:LLVM_PROFDATA = "$HOME/.mozbuild/clang-23/bin/llvm-profdata.exe"
-          $env:JARLOG_FILE = "en-US.log"
-          python mach python build/pgo/profileserver.py --binary "./obj-${{ env.ARCH }}/dist/waterfox/waterfox.exe"
-
-      - name: Upload Windows x64 PGO profile data
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-${{ env.ARCH }}-pgo-profile
-          path: |
-            merged.profdata
-            en-US.log
-
-  build-windows-x64-stage-3:
-    name: Windows x64 PGO use (stage 3)
-    needs:
-      - build-windows-x64-stage-2
-    runs-on:
-      - ubuntu-24.04
-    timeout-minutes: 120
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-windows-x64-stage-3
-      cancel-in-progress: true
-    env:
-      ARCH: 'x86_64-pc-windows-msvc'
-      MOZCONFIG: 'waterfox/build/mozconfig-x86_64-pc-windows-msvc'
-      WINEDEBUG: '-all'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-
-      - name: Prepare tree
-        uses: ./.github/actions/prepare-tree
-        with:
-          sccache-cache-name: wf-build-windows-x64-stage3
-          apt-packages: msitools zstd
-          rust-target: x86_64-pc-windows-msvc
-          tag-version: ${{ inputs.TAG_VERSION }}
-          pre-release: ${{ inputs.PRE_RELEASE }}
-
-      - name: Download Windows x64 PGO profile data
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-${{ env.ARCH }}-pgo-profile
-          path: ${{ github.workspace }}
-
-      - name: Build
-        shell: bash
-        run: |
-          export USE_PGO=1
-          ./mach build
-
-      - name: Package
-        shell: bash
-        run: |
-          ./mach package
-          if [[ -d "$PWD/waterfox/browser/locales/en-GB" ]]; then
-            ./mach package-multi-locale --locales $WFX_L10N_LOCALES
-          fi
-
-      - name: Upload Windows build outputs
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-${{ env.ARCH }}-build
-          path: |
-            obj-${{ env.ARCH }}/dist/waterfox
-            obj-${{ env.ARCH }}/dist/host/bin/mar
-            obj-${{ env.ARCH }}/dist/host/bin/mbsdiff
-            obj-${{ env.ARCH }}/browser/installer/windows/instgen/
-
-  build-windows-arm64:
-    name: Windows ARM64
-    needs:
-      - prepare-assets
-    runs-on:
-      - ubuntu-24.04
-    timeout-minutes: 120
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-windows-arm64
-      cancel-in-progress: true
-    env:
-      ARCH: 'aarch64-pc-windows-msvc'
-      MOZCONFIG: 'waterfox/build/mozconfig-aarch64-pc-windows-msvc'
-      WINEDEBUG: '-all'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-
-      - name: Prepare tree
-        uses: ./.github/actions/prepare-tree
-        with:
-          sccache-cache-name: wf-build-windows-arm64
-          apt-packages: msitools zstd
-          rust-target: aarch64-pc-windows-msvc
-          tag-version: ${{ inputs.TAG_VERSION }}
-          pre-release: ${{ inputs.PRE_RELEASE }}
-
-      - name: Build
-        shell: bash
-        run: ./mach build
-
-      - name: Package
-        shell: bash
-        run: |
-          ./mach package
-          if [[ -d "$PWD/waterfox/browser/locales/en-GB" ]]; then
-            ./mach package-multi-locale --locales $WFX_L10N_LOCALES
-          fi
-
-      - name: Upload Windows ARM64 build outputs
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-${{ env.ARCH }}-build
-          path: |
-            obj-${{ env.ARCH }}/dist/waterfox
-            obj-${{ env.ARCH }}/dist/host/bin/mar
-            obj-${{ env.ARCH }}/dist/host/bin/mbsdiff
-            obj-${{ env.ARCH }}/browser/installer/windows/instgen/
-
-  build-macos-stage-1:
-    name: macOS ${{ matrix.arch }} PGO generate (stage 1)
-    needs:
-      - prepare-assets
-    runs-on:
-      - ubuntu-24.04
-    timeout-minutes: 180
+  compile:
+    name: ${{ matrix.platform }} unsigned
+    needs: prepare-assets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
-        arch:
-          - x86_64-apple-darwin
-          - aarch64-apple-darwin
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-macos-${{ matrix.arch }}-stage-1
-      cancel-in-progress: true
+        include:
+          - platform: linux-x64
+            arch: x86_64-pc-linux-gnu
+            apt: xvfb zstd
+            rust_target: ''
+            artifact: linux-build
+          - platform: linux-arm64
+            arch: aarch64-unknown-linux-gnu
+            apt: xvfb zstd
+            rust_target: aarch64-unknown-linux-gnu
+            artifact: linux-aarch64-build
+          - platform: windows-x64
+            arch: x86_64-pc-windows-msvc
+            apt: msitools zstd
+            rust_target: x86_64-pc-windows-msvc
+            artifact: windows-x86_64-pc-windows-msvc-build
+          - platform: windows-arm64
+            arch: aarch64-pc-windows-msvc
+            apt: msitools zstd
+            rust_target: aarch64-pc-windows-msvc
+            artifact: windows-aarch64-pc-windows-msvc-build
+          - platform: macos-x64
+            arch: x86_64-apple-darwin
+            apt: zstd
+            rust_target: x86_64-apple-darwin
+            artifact: macos-x86_64-apple-darwin-build
+          - platform: macos-arm64
+            arch: aarch64-apple-darwin
+            apt: zstd
+            rust_target: aarch64-apple-darwin
+            artifact: macos-aarch64-apple-darwin-build
     env:
-      ARCH: '${{ matrix.arch }}'
-      MOZCONFIG: 'waterfox/build/mozconfig-${{ matrix.arch }}'
-      MOZ_PKG_FORMAT: 'TAR'
+      ARCH: ${{ matrix.arch }}
+      MOZCONFIG: waterfox/build/mozconfig-${{ matrix.arch }}
+      ARTIFACT_NAME: ${{ matrix.artifact }}
+      WINEDEBUG: '-all'
     steps:
+      - name: Expand disk space for Gecko
+        uses: easimon/maximize-build-space@v10
+        with:
+          root-reserve-mb: 8192
+          temp-reserve-mb: 2048
+          swap-size-mb: 2048
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -383,396 +204,59 @@ jobs:
       - name: Prepare tree
         uses: ./.github/actions/prepare-tree
         with:
-          sccache-cache-name: wf-build-macos-${{ matrix.arch }}-stage1
-          apt-packages: zstd
-          rust-target: ${{ matrix.arch }}
+          sccache-cache-name: uwufox-${{ matrix.platform }}
+          apt-packages: ${{ matrix.apt }}
+          rust-target: ${{ matrix.rust_target }}
           tag-version: ${{ inputs.TAG_VERSION }}
           pre-release: ${{ inputs.PRE_RELEASE }}
 
-      - name: Build instrumented binary
+      - name: Configure platform and show resources
         shell: bash
         run: |
-          export GEN_PGO=1
-          ./mach build
-
-      - name: Package instrumented binary
-        shell: bash
-        run: ./mach package
-
-      - name: Bundle macOS PGO generate outputs
-        shell: bash
-        run: tar -C "obj-${ARCH}/dist" -caf "macos-${ARCH}-pgo-generate.tar.zst" waterfox
-
-      - name: Upload macOS PGO generate outputs
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-${{ matrix.arch }}-pgo-generate
-          path: macos-${{ matrix.arch }}-pgo-generate.tar.zst
-
-  build-macos-stage-2:
-    name: macOS ${{ matrix.arch }} PGO profile (stage 2)
-    needs:
-      - build-macos-stage-1
-    runs-on: macos-15
-    timeout-minutes: 120
-    strategy:
-      fail-fast: false
-      matrix:
-        arch:
-          - x86_64-apple-darwin
-          - aarch64-apple-darwin
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-macos-${{ matrix.arch }}-stage-2
-      cancel-in-progress: true
-    env:
-      ARCH: '${{ matrix.arch }}'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          filter: blob:none
-          sparse-checkout: |
-            build
-            python
-            scripts
-            security/mac
-            taskcluster/config.yml
-            taskcluster/scripts
-            testing/gtest
-            testing/mozbase
-            testing/profiles
-            testing/talos/talos
-            testing/web-platform/tests/tools/third_party/certifi
-            third_party/python
-            third_party/webkit
-            tools/quitter
-            waterfox/build
-
-      - name: Setup profile packages
-        shell: bash
-        run: |
-          if ! command -v zstd > /dev/null; then
-            HOMEBREW_NO_AUTO_UPDATE=1 brew install zstd
+          if [[ "$ARCH" == *apple-darwin ]]; then
+            echo "MOZ_PKG_FORMAT=TAR" >> "$GITHUB_ENV"
           fi
-          scripts/fetch-clang-23.sh
-          test -x "$HOME/.mozbuild/clang-23/bin/llvm-profdata"
+          df -h /
+          free -h
+          nproc
 
-      - name: Download macOS PGO generate outputs
-        uses: actions/download-artifact@v4
-        with:
-          name: macos-${{ matrix.arch }}-pgo-generate
-          path: .
-
-      - name: Prepare instrumented app
+      - name: Build with resource diagnostics
         shell: bash
         run: |
-          rm -f .mozconfig
-          mkdir -p "obj-${ARCH}/dist"
-          tar -xf "macos-${ARCH}-pgo-generate.tar.zst" -C "obj-${ARCH}/dist"
-          rm -f "macos-${ARCH}-pgo-generate.tar.zst"
+          set -euo pipefail
+          monitor() {
+            while sleep 60; do
+              echo "::group::Resource usage $(date -u +%H:%M:%S)"
+              df -h /
+              free -h
+              echo "::endgroup::"
+            done
+          }
+          monitor &
+          monitor_pid=$!
+          trap 'kill "$monitor_pid" 2>/dev/null || true' EXIT
+          if [[ "$ARCH" == *linux-gnu ]]; then
+            xvfb-run -a --server-args="-screen 0 1280x1024x24" ./mach build
+          else
+            ./mach build
+          fi
 
-      - name: Run PGO profile
+      - name: Package without signing
         shell: bash
         run: |
-          export LLVM_PROFDATA="$HOME/.mozbuild/clang-23/bin/llvm-profdata"
-          export JARLOG_FILE="en-US.log"
-          python3 mach python build/pgo/profileserver.py --binary "./obj-${ARCH}/dist/waterfox/Waterfox.app/Contents/MacOS/waterfox"
-          test -s merged.profdata
-          test -s en-US.log
-
-      - name: Upload macOS PGO profile data
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-${{ matrix.arch }}-pgo-profile
-          path: |
-            merged.profdata
-            en-US.log
-
-  build-macos-stage-3:
-    name: macOS ${{ matrix.arch }} PGO use (stage 3)
-    needs:
-      - prepare-assets
-      - build-macos-stage-2
-    runs-on:
-      - ubuntu-24.04
-    timeout-minutes: 180
-    strategy:
-      fail-fast: false
-      matrix:
-        arch:
-          - x86_64-apple-darwin
-          - aarch64-apple-darwin
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-macos-${{ matrix.arch }}-stage-3
-      cancel-in-progress: true
-    env:
-      ARCH: '${{ matrix.arch }}'
-      MOZCONFIG: 'waterfox/build/mozconfig-${{ matrix.arch }}'
-      MOZ_PKG_FORMAT: 'TAR'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-
-      - name: Prepare tree
-        uses: ./.github/actions/prepare-tree
-        with:
-          sccache-cache-name: wf-build-macos-${{ matrix.arch }}-stage3
-          apt-packages: zstd
-          rust-target: ${{ matrix.arch }}
-          tag-version: ${{ inputs.TAG_VERSION }}
-          pre-release: ${{ inputs.PRE_RELEASE }}
-
-      - name: Download macOS PGO profile data
-        uses: actions/download-artifact@v4
-        with:
-          name: macos-${{ matrix.arch }}-pgo-profile
-          path: ${{ github.workspace }}
-
-      - name: Build
-        shell: bash
-        run: |
-          export USE_PGO=1
-          ./mach build
-
-      - name: Package
-        shell: bash
-        run: |
+          set -euo pipefail
           ./mach package
-          if [[ -d "$PWD/waterfox/browser/locales/en-GB" ]]; then
-            ./mach package-multi-locale --locales $WFX_L10N_LOCALES
-          fi
+          objdir="obj-${ARCH}"
+          test -d "$objdir/dist/waterfox"
+          mkdir -p artifacts
+          tar --zstd -cf "artifacts/${ARTIFACT_NAME}.tar.zst" -C "$objdir/dist" waterfox
+          (cd artifacts && sha256sum *.tar.zst > SHA256SUMS.txt)
 
-      - name: Bundle macOS build outputs
-        shell: bash
-        run: tar -C "obj-${ARCH}/dist" -caf "macos-${ARCH}-build.tar.zst" waterfox
-
-      - name: Upload macOS build outputs
+      - name: Upload unsigned build outputs
         uses: actions/upload-artifact@v4
         with:
-          name: macos-${{ matrix.arch }}-build
-          path: macos-${{ matrix.arch }}-build.tar.zst
-
-  build-linux-x64:
-    name: Linux x64
-    needs:
-      - prepare-assets
-    runs-on:
-      - ubuntu-24.04
-    timeout-minutes: 120
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-linux-x64
-      cancel-in-progress: true
-    env:
-      ARCH: 'x86_64-pc-linux-gnu'
-      MOZCONFIG: 'waterfox/build/mozconfig-x86_64-pc-linux-gnu'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-
-      - name: Prepare tree
-        uses: ./.github/actions/prepare-tree
-        with:
-          sccache-cache-name: wf-build-linux-x64
-          apt-packages: xvfb zstd
-          tag-version: ${{ inputs.TAG_VERSION }}
-          pre-release: ${{ inputs.PRE_RELEASE }}
-
-      - name: Build
-        shell: bash
-        run: xvfb-run -a --server-args="-screen 0 1280x1024x24" ./mach build
-
-      - name: Package
-        shell: bash
-        run: |
-          ./mach package
-          if [[ -d "$PWD/waterfox/browser/locales/en-GB" ]]; then
-            ./mach package-multi-locale --locales $WFX_L10N_LOCALES
-          fi
-
-      - name: Bundle Linux build outputs
-        shell: bash
-        run: tar -C "obj-${ARCH}/dist" -caf linux-build.tar.zst waterfox host/bin/mar host/bin/mbsdiff
-
-      - name: Upload Linux build outputs
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-build
-          path: linux-build.tar.zst
-
-  build-linux-arm64-stage-1:
-    name: Linux ARM64 PGO generate (stage 1)
-    needs:
-      - prepare-assets
-    runs-on:
-      - ubuntu-24.04
-    timeout-minutes: 120
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-linux-arm64-stage-1
-      cancel-in-progress: true
-    env:
-      ARCH: 'aarch64-unknown-linux-gnu'
-      MOZCONFIG: 'waterfox/build/mozconfig-aarch64-unknown-linux-gnu'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-
-      - name: Prepare tree
-        uses: ./.github/actions/prepare-tree
-        with:
-          sccache-cache-name: wf-build-linux-arm64-stage1
-          apt-packages: xvfb zstd
-          rust-target: aarch64-unknown-linux-gnu
-          tag-version: ${{ inputs.TAG_VERSION }}
-          pre-release: ${{ inputs.PRE_RELEASE }}
-
-      - name: Build instrumented binary
-        shell: bash
-        run: |
-          export GEN_PGO=1
-          ./mach build
-
-      - name: Package instrumented binary
-        shell: bash
-        run: ./mach package
-
-      - name: Bundle Linux ARM64 PGO generate outputs
-        shell: bash
-        run: tar -C "obj-${ARCH}/dist" -caf linux-aarch64-pgo-generate.tar.zst waterfox
-
-      - name: Upload Linux ARM64 PGO generate outputs
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-aarch64-pgo-generate
-          path: linux-aarch64-pgo-generate.tar.zst
-
-  build-linux-arm64-stage-2:
-    name: Linux ARM64 PGO profile (stage 2)
-    needs:
-      - build-linux-arm64-stage-1
-    runs-on:
-      - ubuntu-24.04-arm
-    timeout-minutes: 120
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-linux-arm64-stage-2
-      cancel-in-progress: true
-    env:
-      ARCH: 'aarch64-unknown-linux-gnu'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          filter: blob:none
-          sparse-checkout: |
-            build
-            python
-            scripts
-            taskcluster/scripts
-            testing/gtest
-            testing/mozbase
-            testing/profiles
-            testing/talos/talos
-            testing/web-platform/tests/tools/third_party/certifi
-            third_party/python
-            third_party/webkit
-            tools/quitter
-            waterfox/build
-
-      - name: Setup profile packages
-        shell: bash
-        run: |
-          sudo apt update
-          sudo apt install -y libasound2-dev libdbus-1-dev libgtk-3-dev libpulse-dev libx11-xcb-dev libxt-dev pkg-config xvfb zstd
-          scripts/fetch-clang-23.sh
-          test -x "$HOME/.mozbuild/clang-23/bin/llvm-profdata"
-
-      - name: Download Linux ARM64 PGO generate outputs
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-aarch64-pgo-generate
-          path: .
-
-      - name: Run PGO profile
-        shell: bash
-        run: |
-          rm -f .mozconfig
-          mkdir -p "obj-${ARCH}/dist"
-          tar -xf linux-aarch64-pgo-generate.tar.zst -C "obj-${ARCH}/dist"
-          rm -f linux-aarch64-pgo-generate.tar.zst
-          export PATH="$HOME/.mozbuild/clang-23/bin:$PATH"
-          export CC="$HOME/.mozbuild/clang-23/bin/clang"
-          export CXX="$HOME/.mozbuild/clang-23/bin/clang++"
-          export LLVM_PROFDATA="$HOME/.mozbuild/clang-23/bin/llvm-profdata"
-          export JARLOG_FILE="en-US.log"
-          xvfb-run -a --server-args="-screen 0 1280x1024x24" python3 mach python build/pgo/profileserver.py --binary "./obj-${ARCH}/dist/waterfox/waterfox"
-
-      - name: Upload Linux ARM64 PGO profile data
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-aarch64-pgo-profile
-          path: |
-            merged.profdata
-            en-US.log
-
-  build-linux-arm64-stage-3:
-    name: Linux ARM64 PGO use (stage 3)
-    needs:
-      - build-linux-arm64-stage-2
-    runs-on:
-      - ubuntu-24.04
-    timeout-minutes: 120
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-linux-arm64-stage-3
-      cancel-in-progress: true
-    env:
-      ARCH: 'aarch64-unknown-linux-gnu'
-      MOZCONFIG: 'waterfox/build/mozconfig-aarch64-unknown-linux-gnu'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-
-      - name: Prepare tree
-        uses: ./.github/actions/prepare-tree
-        with:
-          sccache-cache-name: wf-build-linux-arm64-stage3
-          apt-packages: xvfb zstd
-          rust-target: aarch64-unknown-linux-gnu
-          tag-version: ${{ inputs.TAG_VERSION }}
-          pre-release: ${{ inputs.PRE_RELEASE }}
-
-      - name: Download Linux ARM64 PGO profile data
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-aarch64-pgo-profile
-          path: ${{ github.workspace }}
-
-      - name: Build
-        shell: bash
-        run: |
-          export USE_PGO=1
-          ./mach build
-
-      - name: Package
-        shell: bash
-        run: |
-          ./mach package
-          if [[ -d "$PWD/waterfox/browser/locales/en-GB" ]]; then
-            ./mach package-multi-locale --locales $WFX_L10N_LOCALES
-          fi
-
-      - name: Bundle Linux ARM64 build outputs
-        shell: bash
-        run: tar -C "obj-${ARCH}/dist" -caf linux-aarch64-build.tar.zst waterfox host/bin/mar host/bin/mbsdiff
-
-      - name: Upload Linux ARM64 build outputs
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-aarch64-build
-          path: linux-aarch64-build.tar.zst
+          name: ${{ matrix.artifact }}
+          path: artifacts/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
