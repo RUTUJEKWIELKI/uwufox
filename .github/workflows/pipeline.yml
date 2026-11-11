@@ -23,44 +23,15 @@ on:
 
 permissions:
   contents: read
-  actions: write
+  actions: read
 
 concurrency:
   group: uwufox-pipeline-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  cancel-previous:
-    name: Cancel previous runs
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Stop obsolete in-progress or queued workflows
-        uses: actions/github-script@v7
-        with:
-          script: |
-            for (const status of ['in_progress', 'queued']) {
-              const runs = await github.paginate(github.rest.actions.listWorkflowRunsForRepo, {
-                ...context.repo,
-                status,
-                per_page: 100,
-              });
-              for (const run of runs) {
-                if (run.id === context.runId) continue;
-                try {
-                  await github.rest.actions.cancelWorkflowRun({
-                    ...context.repo,
-                    run_id: run.id,
-                  });
-                  core.info('Cancellation requested for run ' + run.id);
-                } catch (error) {
-                  core.warning('Could not cancel ' + run.id + ': ' + error.message);
-                }
-              }
-            }
-
   metadata:
     name: Build parameters
-    needs: cancel-previous
     runs-on: ubuntu-24.04
     outputs:
       build_date: ${{ steps.build.outputs.build_date }}
@@ -86,7 +57,7 @@ jobs:
           echo "display_version=$DISPLAY_VERSION" >> "$GITHUB_OUTPUT"
 
   build:
-    name: Build all platforms (Waterfox pipeline)
+    name: Build all platforms (resource-efficient)
     needs: metadata
     permissions:
       contents: read
