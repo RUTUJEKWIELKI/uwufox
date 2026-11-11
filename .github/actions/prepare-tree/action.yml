@@ -26,16 +26,12 @@ runs:
       if: ${{ inputs.sccache-cache-name != '' }}
       uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
 
-    - name: Setup Namespace sccache
+    - name: Setup GitHub sccache
       if: ${{ inputs.sccache-cache-name != '' }}
       shell: bash
-      env:
-        SCCACHE_CACHE_NAME: '${{ inputs.sccache-cache-name }}'
       run: |
-        SCCACHE_ENV_VARS="$(nsc cache sccache setup --cache_name "$SCCACHE_CACHE_NAME")"
-        for kv in $SCCACHE_ENV_VARS; do
-          echo "$kv" >> "$GITHUB_ENV"
-        done
+        echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
+        echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
 
     - name: Setup build packages
       if: ${{ inputs.apt-packages != '' }}
