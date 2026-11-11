@@ -108,17 +108,26 @@ runs:
         test -n "$locales"
         printf 'WFX_L10N_LOCALES=%s\n' "$locales" >> "$GITHUB_ENV"
 
-    - name: Download build asset snapshot
-      uses: actions/download-artifact@v4
-      with:
-        name: build-assets-snapshot
-        path: artifacts
-
-    - name: Apply build asset snapshot
+    - name: Validate bundled browser assets from checkout
       shell: bash
       run: |
-        rm -rf \
-          waterfox/browser/components/blocker/assets \
-          services/settings/dumps \
-          services/settings/static-dumps
-        tar -xf artifacts/build-assets-snapshot.tar.zst -C .
+        set -euo pipefail
+        for asset in \
+          waterfox/browser/components/blocker/assets/list_catalog.json \
+          waterfox/browser/components/blocker/assets/resources/resources.json \
+          waterfox/browser/components/blocker/assets/resources/ubo-scriptlets.json \
+          waterfox/browser/components/blocker/assets/filters/easylist.txt; do
+          if [[ ! -s "$asset" ]]; then
+            echo "::error::Missing or empty bundled asset: $asset"
+            exit 1
+          fi
+        done
+        python3 - <<'PY'
+        import runpy
+        from pathlib import Path
+        module = runpy.run_path("scripts/update-remote-settings-dumps.py")
+        root = Path.cwd()
+        required = module["load_required_dumps"](root)
+        files = module["resolve_targets"](root, required)
+        print(f"Validated {len(files)} committed Remote Settings dumps")
+        PY
