@@ -2,6 +2,21 @@
 name: Build
 
 on:
+  workflow_dispatch:
+    inputs:
+      MOZ_BUILD_DATE:
+        description: Build date (YYYYMMDDHHMMSS), shared by every platform build
+        required: true
+        type: string
+      PRE_RELEASE:
+        description: Mark the build as a pre-release
+        required: false
+        default: "true"
+        type: string
+      TAG_VERSION:
+        description: Display version
+        required: true
+        type: string
   workflow_call:
     inputs:
       MOZ_BUILD_DATE:
@@ -28,21 +43,16 @@ permissions:
 env:
   MACH_MAIN_PID: "0"
   MOZ_BUILD_DATE: '${{ inputs.MOZ_BUILD_DATE }}'
-  MOZ_MAKE_FLAGS: -j$(nproc)
-  CARGO_BUILD_JOBS: $(nproc)
   MOZ_NOSPAM: "1"
   PRE_RELEASE: '${{ inputs.PRE_RELEASE }}'
   RUST_TOOLCHAIN: "1.99.1"
   TAG_VERSION: '${{ inputs.TAG_VERSION }}'
-  CC: sccache cc
-  CXX: sccache c++
-  RCCACHE_PROG: sccache
 
 jobs:
   metadata:
     name: Build metadata
     runs-on:
-      - namespace-profile-linux-xs
+      - ubuntu-24.04
     timeout-minutes: 120
     outputs:
       run_id: ${{ steps.outputs.outputs.run_id }}
@@ -80,7 +90,7 @@ jobs:
           } > artifacts/build-metadata.env
 
       - name: Upload build metadata
-        uses: namespace-actions/upload-artifact@f6ccaacc655aec41b93af180d1d7eef21af862d2 # v1.0.3
+        uses: actions/upload-artifact@v4
         with:
           name: build-metadata
           path: artifacts/build-metadata.env
@@ -88,7 +98,7 @@ jobs:
   prepare-assets:
     name: Build asset snapshot
     runs-on:
-      - namespace-profile-linux-xs
+      - ubuntu-24.04
     timeout-minutes: 30
     steps:
       - name: Checkout
@@ -119,7 +129,7 @@ jobs:
             services/settings/static-dumps
 
       - name: Upload build asset snapshot
-        uses: namespace-actions/upload-artifact@f6ccaacc655aec41b93af180d1d7eef21af862d2 # v1.0.3
+        uses: actions/upload-artifact@v4
         with:
           name: build-assets-snapshot
           path: artifacts/build-assets-snapshot.tar.zst
@@ -129,7 +139,7 @@ jobs:
     needs:
       - prepare-assets
     runs-on:
-      - namespace-profile-linux-md
+      - ubuntu-24.04
     timeout-minutes: 120
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-windows-x64-stage-1
@@ -164,7 +174,7 @@ jobs:
         run: ./mach package
 
       - name: Upload Windows x64 PGO generate outputs
-        uses: namespace-actions/upload-artifact@f6ccaacc655aec41b93af180d1d7eef21af862d2 # v1.0.3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-${{ env.ARCH }}-pgo-generate
           path: obj-${{ env.ARCH }}/dist/waterfox
@@ -173,7 +183,7 @@ jobs:
     name: Windows x64 PGO profile (stage 2)
     needs:
       - build-windows-x64-stage-1
-    runs-on: namespace-profile-windows-md
+    runs-on: windows-2025
     timeout-minutes: 120
     defaults:
       run:
@@ -213,7 +223,7 @@ jobs:
         run: rustup default "${RUST_TOOLCHAIN}"
 
       - name: Download Windows x64 PGO generate outputs
-        uses: namespace-actions/download-artifact@7cbad919e4b0e09f17e9d6311a444ff002992b5b # v2.0.1
+        uses: actions/download-artifact@v4
         with:
           name: windows-${{ env.ARCH }}-pgo-generate
           path: obj-${{ env.ARCH }}/dist/waterfox
@@ -227,7 +237,7 @@ jobs:
           python mach python build/pgo/profileserver.py --binary "./obj-${{ env.ARCH }}/dist/waterfox/waterfox.exe"
 
       - name: Upload Windows x64 PGO profile data
-        uses: namespace-actions/upload-artifact@f6ccaacc655aec41b93af180d1d7eef21af862d2 # v1.0.3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-${{ env.ARCH }}-pgo-profile
           path: |
@@ -239,7 +249,7 @@ jobs:
     needs:
       - build-windows-x64-stage-2
     runs-on:
-      - namespace-profile-linux-md
+      - ubuntu-24.04
     timeout-minutes: 120
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-windows-x64-stage-3
@@ -264,7 +274,7 @@ jobs:
           pre-release: ${{ inputs.PRE_RELEASE }}
 
       - name: Download Windows x64 PGO profile data
-        uses: namespace-actions/download-artifact@7cbad919e4b0e09f17e9d6311a444ff002992b5b # v2.0.1
+        uses: actions/download-artifact@v4
         with:
           name: windows-${{ env.ARCH }}-pgo-profile
           path: ${{ github.workspace }}
@@ -284,7 +294,7 @@ jobs:
           fi
 
       - name: Upload Windows build outputs
-        uses: namespace-actions/upload-artifact@f6ccaacc655aec41b93af180d1d7eef21af862d2 # v1.0.3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-${{ env.ARCH }}-build
           path: |
@@ -298,7 +308,7 @@ jobs:
     needs:
       - prepare-assets
     runs-on:
-      - namespace-profile-linux-md
+      - ubuntu-24.04
     timeout-minutes: 120
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-windows-arm64
@@ -335,7 +345,7 @@ jobs:
           fi
 
       - name: Upload Windows ARM64 build outputs
-        uses: namespace-actions/upload-artifact@f6ccaacc655aec41b93af180d1d7eef21af862d2 # v1.0.3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-${{ env.ARCH }}-build
           path: |
@@ -349,7 +359,7 @@ jobs:
     needs:
       - prepare-assets
     runs-on:
-      - namespace-profile-linux-md
+      - ubuntu-24.04
     timeout-minutes: 180
     strategy:
       fail-fast: false
@@ -394,7 +404,7 @@ jobs:
         run: tar -C "obj-${ARCH}/dist" -caf "macos-${ARCH}-pgo-generate.tar.zst" waterfox
 
       - name: Upload macOS PGO generate outputs
-        uses: namespace-actions/upload-artifact@f6ccaacc655aec41b93af180d1d7eef21af862d2 # v1.0.3
+        uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.arch }}-pgo-generate
           path: macos-${{ matrix.arch }}-pgo-generate.tar.zst
@@ -403,7 +413,7 @@ jobs:
     name: macOS ${{ matrix.arch }} PGO profile (stage 2)
     needs:
       - build-macos-stage-1
-    runs-on: namespace-profile-macos-tahoe-lg
+    runs-on: macos-15
     timeout-minutes: 120
     strategy:
       fail-fast: false
@@ -436,7 +446,6 @@ jobs:
             third_party/python
             third_party/webkit
             tools/quitter
-            tools/signing
             waterfox/build
 
       - name: Setup profile packages
@@ -449,7 +458,7 @@ jobs:
           test -x "$HOME/.mozbuild/clang-23/bin/llvm-profdata"
 
       - name: Download macOS PGO generate outputs
-        uses: namespace-actions/download-artifact@7cbad919e4b0e09f17e9d6311a444ff002992b5b # v2.0.1
+        uses: actions/download-artifact@v4
         with:
           name: macos-${{ matrix.arch }}-pgo-generate
           path: .
@@ -461,11 +470,6 @@ jobs:
           mkdir -p "obj-${ARCH}/dist"
           tar -xf "macos-${ARCH}-pgo-generate.tar.zst" -C "obj-${ARCH}/dist"
           rm -f "macos-${ARCH}-pgo-generate.tar.zst"
-          SIGNING_CHANNEL=release
-          if [[ "$PRE_RELEASE" == 'true' ]]; then
-            SIGNING_CHANNEL=beta
-          fi
-          ./mach macos-sign -a "obj-${ARCH}/dist/waterfox/Waterfox.app" -e developer -c "$SIGNING_CHANNEL"
 
       - name: Run PGO profile
         shell: bash
@@ -477,7 +481,7 @@ jobs:
           test -s en-US.log
 
       - name: Upload macOS PGO profile data
-        uses: namespace-actions/upload-artifact@f6ccaacc655aec41b93af180d1d7eef21af862d2 # v1.0.3
+        uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.arch }}-pgo-profile
           path: |
@@ -490,7 +494,7 @@ jobs:
       - prepare-assets
       - build-macos-stage-2
     runs-on:
-      - namespace-profile-linux-md
+      - ubuntu-24.04
     timeout-minutes: 180
     strategy:
       fail-fast: false
@@ -521,7 +525,7 @@ jobs:
           pre-release: ${{ inputs.PRE_RELEASE }}
 
       - name: Download macOS PGO profile data
-        uses: namespace-actions/download-artifact@7cbad919e4b0e09f17e9d6311a444ff002992b5b # v2.0.1
+        uses: actions/download-artifact@v4
         with:
           name: macos-${{ matrix.arch }}-pgo-profile
           path: ${{ github.workspace }}
@@ -545,7 +549,7 @@ jobs:
         run: tar -C "obj-${ARCH}/dist" -caf "macos-${ARCH}-build.tar.zst" waterfox
 
       - name: Upload macOS build outputs
-        uses: namespace-actions/upload-artifact@f6ccaacc655aec41b93af180d1d7eef21af862d2 # v1.0.3
+        uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.arch }}-build
           path: macos-${{ matrix.arch }}-build.tar.zst
@@ -555,7 +559,7 @@ jobs:
     needs:
       - prepare-assets
     runs-on:
-      - namespace-profile-legacy-linux-md
+      - ubuntu-24.04
     timeout-minutes: 120
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-linux-x64
@@ -594,7 +598,7 @@ jobs:
         run: tar -C "obj-${ARCH}/dist" -caf linux-build.tar.zst waterfox host/bin/mar host/bin/mbsdiff
 
       - name: Upload Linux build outputs
-        uses: namespace-actions/upload-artifact@f6ccaacc655aec41b93af180d1d7eef21af862d2 # v1.0.3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-build
           path: linux-build.tar.zst
@@ -604,7 +608,7 @@ jobs:
     needs:
       - prepare-assets
     runs-on:
-      - namespace-profile-legacy-linux-md
+      - ubuntu-24.04
     timeout-minutes: 120
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-linux-arm64-stage-1
@@ -642,7 +646,7 @@ jobs:
         run: tar -C "obj-${ARCH}/dist" -caf linux-aarch64-pgo-generate.tar.zst waterfox
 
       - name: Upload Linux ARM64 PGO generate outputs
-        uses: namespace-actions/upload-artifact@f6ccaacc655aec41b93af180d1d7eef21af862d2 # v1.0.3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-aarch64-pgo-generate
           path: linux-aarch64-pgo-generate.tar.zst
@@ -652,7 +656,7 @@ jobs:
     needs:
       - build-linux-arm64-stage-1
     runs-on:
-      - namespace-profile-linux-md-arm
+      - ubuntu-24.04-arm
     timeout-minutes: 120
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-linux-arm64-stage-2
@@ -688,7 +692,7 @@ jobs:
           test -x "$HOME/.mozbuild/clang-23/bin/llvm-profdata"
 
       - name: Download Linux ARM64 PGO generate outputs
-        uses: namespace-actions/download-artifact@7cbad919e4b0e09f17e9d6311a444ff002992b5b # v2.0.1
+        uses: actions/download-artifact@v4
         with:
           name: linux-aarch64-pgo-generate
           path: .
@@ -708,7 +712,7 @@ jobs:
           xvfb-run -a --server-args="-screen 0 1280x1024x24" python3 mach python build/pgo/profileserver.py --binary "./obj-${ARCH}/dist/waterfox/waterfox"
 
       - name: Upload Linux ARM64 PGO profile data
-        uses: namespace-actions/upload-artifact@f6ccaacc655aec41b93af180d1d7eef21af862d2 # v1.0.3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-aarch64-pgo-profile
           path: |
@@ -720,7 +724,7 @@ jobs:
     needs:
       - build-linux-arm64-stage-2
     runs-on:
-      - namespace-profile-legacy-linux-md
+      - ubuntu-24.04
     timeout-minutes: 120
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-linux-arm64-stage-3
@@ -744,7 +748,7 @@ jobs:
           pre-release: ${{ inputs.PRE_RELEASE }}
 
       - name: Download Linux ARM64 PGO profile data
-        uses: namespace-actions/download-artifact@7cbad919e4b0e09f17e9d6311a444ff002992b5b # v2.0.1
+        uses: actions/download-artifact@v4
         with:
           name: linux-aarch64-pgo-profile
           path: ${{ github.workspace }}
@@ -768,7 +772,7 @@ jobs:
         run: tar -C "obj-${ARCH}/dist" -caf linux-aarch64-build.tar.zst waterfox host/bin/mar host/bin/mbsdiff
 
       - name: Upload Linux ARM64 build outputs
-        uses: namespace-actions/upload-artifact@f6ccaacc655aec41b93af180d1d7eef21af862d2 # v1.0.3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-aarch64-build
           path: linux-aarch64-build.tar.zst
