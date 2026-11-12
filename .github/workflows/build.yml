@@ -238,11 +238,37 @@ jobs:
         run: |
           set -euo pipefail
           ./mach package
-          objdir="obj-${ARCH}"
-          test -d "$objdir/dist/waterfox"
+          dist="obj-${ARCH}/dist"
           mkdir -p artifacts
-          tar --zstd -cf "artifacts/${ARTIFACT_NAME}.tar.zst" -C "$objdir/dist" waterfox
-          (cd artifacts && sha256sum *.tar.zst > SHA256SUMS.txt)
+          shopt -s nullglob
+
+          # mach package generates platform archives (e.g. uwufox-*.tar.xz).
+          # Do not assume dist/waterfox exists: the application is named uwufox.
+          packages=()
+          for pkg in \
+            "$dist"/uwufox-*.tar.xz \
+            "$dist"/uwufox-*.tar.bz2 \
+            "$dist"/uwufox-*.tar.gz \
+            "$dist"/uwufox-*.tar.zst \
+            "$dist"/uwufox-*.tar \
+            "$dist"/uwufox-*.zip \
+            "$dist"/uwufox-*.dmg \
+            "$dist"/uwufox-*.pkg \
+            "$dist"/uwufox-*.exe \
+            "$dist"/uwufox-*.msi; do
+            if [[ -f "$pkg" && -s "$pkg" ]]; then
+              packages+=("$pkg")
+            fi
+          done
+
+          if (( ${#packages[@]} == 0 )); then
+            echo "::error::mach package did not produce a recognized uwufox archive under $dist"
+            find "$dist" -maxdepth 1 -type f -printf '%f\n' | sort
+            exit 1
+          fi
+
+          cp -v -- "${packages[@]}" artifacts/
+          (cd artifacts && sha256sum -- uwufox-* > SHA256SUMS.txt)
 
       - name: Upload unsigned build outputs
         uses: actions/upload-artifact@v4
