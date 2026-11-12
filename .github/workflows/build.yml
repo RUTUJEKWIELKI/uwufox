@@ -48,7 +48,7 @@ env:
   RUST_TOOLCHAIN: "1.99.1"
   TAG_VERSION: '${{ inputs.TAG_VERSION }}'
   UWUFOX_CI_LOW_RESOURCE: '1'
-  MOZ_MAKE_FLAGS: '-j2'
+  MOZ_MAKE_FLAGS: '-j1'
   CARGO_BUILD_JOBS: '1'
   CARGO_INCREMENTAL: '0'
 
@@ -143,23 +143,36 @@ jobs:
       MOZCONFIG: waterfox/build/mozconfig-${{ matrix.arch }}
       ARTIFACT_NAME: ${{ matrix.artifact }}
       WINEDEBUG: '-all'
-      # These files are huge; keep them off the runner's system/root partition.
+      # Keep caches in the checkout rather than duplicating files under the runner home.
       MOZBUILD_STATE_PATH: ${{ github.workspace }}/.mozbuild
       CARGO_HOME: ${{ github.workspace }}/.cargo
       XDG_CACHE_HOME: ${{ github.workspace }}/.cache
       SCCACHE_DIR: ${{ github.workspace }}/.sccache
     steps:
-      - name: Expand disk space for Gecko
-        uses: easimon/maximize-build-space@v10
-        with:
-          root-reserve-mb: 16384
-          temp-reserve-mb: 1024
-          swap-size-mb: 2048
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'true'
+      - name: Preserve system disk and add 12 GiB swap
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Disk and memory before checkout:"
+          df -h /
+          free -h
+
+          # Keep the stock filesystem intact. The previous volume merge
+          # left only 1.8 GiB free on the root partition.
+          available_gb=$(df -BG --output=avail / | tail -1 | tr -dc '0-9')
+          if (( available_gb < 35 )); then
+            echo "::error::Only ${available_gb} GiB free on /; require at least 35 GiB."
+            exit 1
+          fi
+
+          # gkrust/LLVM exhausted 15 GiB RAM + 2 GiB swap on the last run.
+          sudo fallocate -l 12G /swap-uwufox
+          sudo chmod 600 /swap-uwufox
+          sudo mkswap /swap-uwufox
+          sudo swapon /swap-uwufox
+          swapon --show
+          free -h
+          df -h /
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -215,9 +228,9 @@ jobs:
           monitor_pid=$!
           trap 'kill "$monitor_pid" 2>/dev/null || true' EXIT
           if [[ "$ARCH" == *linux-gnu ]]; then
-            xvfb-run -a --server-args="-screen 0 1280x1024x24" ./mach build
+            xvfb-run -a --server-args="-screen 0 1280x1024x24" ./mach build -j 1
           else
-            ./mach build
+            ./mach build -j 1
           fi
 
       - name: Package without signing
