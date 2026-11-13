@@ -42,7 +42,9 @@
 @APPNAME@/Contents/PkgInfo
 @RESPATH@/firefox.icns
 @RESPATH@/document.icns
+#ifdef MOZ_BRANDING_ASSETS_CAR
 @RESPATH@/Assets.car
+#endif
 @RESPATH@/@LPROJ_ROOT@.lproj/*
 #endif
 
