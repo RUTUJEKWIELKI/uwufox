@@ -104,6 +104,15 @@ ifdef MOZ_NOTIFICATION_SERVER
 DEFINES += -DMOZ_NOTIFICATION_SERVER=1
 endif
 
+# Assets.car is optional for custom branding (such as Uwufox), which
+# provides .icns icons but no Apple asset catalog. Match the app bundle
+# staging rule that copies Assets.car only when the file exists.
+ifeq (Darwin,$(OS_TARGET))
+ifneq (,$(wildcard $(topsrcdir)/$(MOZ_BRANDING_DIRECTORY)/Assets.car))
+DEFINES += -DMOZ_BRANDING_ASSETS_CAR=1
+endif
+endif
+
 include $(topsrcdir)/toolkit/mozapps/installer/packager.mk
 
 BINPATH = $(MOZ_PKG_BINPATH)
